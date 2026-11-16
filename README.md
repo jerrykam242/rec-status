@@ -1,6 +1,8 @@
-# rec-status
+<p align="center"><img src="docs/logo.svg" width="112" alt="rec-status logo"></p>
 
-**English** · [简体中文](README.zh-CN.md)
+<h1 align="center">rec-status</h1>
+
+<p align="center"><b>English</b> · <a href="README.zh-CN.md">简体中文</a></p>
 
 A small, self-hosted setup around a live-stream recorder ([BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder),
 a.k.a. 录播姬) and a file server ([OpenList](https://github.com/OpenListTeam/OpenList)).
@@ -17,6 +19,18 @@ a way for viewers to request recordings, and a sign-in gate in front of everythi
 | **Agent and worker** | Run on the recorder host. The agent pushes recorder state to the status site; the worker handles approved requests (copies files, creates the share, sends mail). |
 
 All pages use [IBM Carbon](https://carbondesignsystem.com/) styling and IBM Plex fonts.
+
+## Preview
+
+The pages are in Chinese; the screenshots use made-up demo data.
+
+| Status page (light) | Status page (dark) |
+|---|---|
+| ![Status page, light theme](docs/preview/status-light.png) | ![Status page, dark theme](docs/preview/status-dark.png) |
+| **Recording request form** | **Sign-in (Turnstile)** |
+| ![Recording request form with a date calendar](docs/preview/request-dark.png) | ![Sign-in page](docs/preview/signin.png) |
+
+<p align="center"><img src="docs/preview/status-mobile.png" width="280" alt="Status page on a phone"></p>
 
 ## Layout
 
@@ -36,6 +50,7 @@ edge-gate/            Turnstile gate for the file server and recorder sites (Ope
   tools/rec-theme-check/  checks that the recorder theme still fits after a recorder upgrade
 ops/                  Cloudflare-only origin firewall (nftables), systemd units, logrotate
 tools/                build-carbon-css.py (trims Carbon's compiled CSS)
+docs/                 repo logo and README screenshots
 ```
 
 Each component has its own notes:
