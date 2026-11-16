@@ -1,17 +1,15 @@
-rec-status · edge gate lore book            English | 中文: README.zh-CN
-=================================
+rec-status · edge gate            English | 中文: README.zh-CN
+=======================
 
-The Gatekeeper of the party: Cloudflare Turnstile for file.example.com (OpenList) and
-rec.example.com (录播姬's WebUI). Nobody walks into the treasure vault or the Princess's
-chamber without passing the shrine maiden's check first.
+Cloudflare Turnstile for file.example.com (OpenList) and rec.example.com (the recorder WebUI).
 
 Sitekey: YOUR_TURNSTILE_SITEKEY  (the widget's domains must include both hosts)
 
 Host path /opt/1panel/www/common/turnstile  ==  /www/common/turnstile in the OpenResty container.
 
 
-Inventory (files & key items)
------------------------------
+Files
+-----
   secret          Turnstile secret key (root 600). Write it with set-secret.sh.
   cookie_key      random HMAC key for the session/share cookies (root 600).
   rec_auth        "user:pass" of the recorder's Basic auth (root 600). Write it with set-rec-auth.sh.
@@ -55,13 +53,13 @@ Inventory (files & key items)
                   only necessary cookies, acknowledgement kept in localStorage
                   "site.cookie-notice"; the policy lives at https://rec-status.example.com/privacy,
                   source status-site/index/privacy.html), share.js + share.css (share check page).
-  public/rec/     sign-in assets + the recorder skin (see "Wardrobe" below).
-  tools/          build-carbon-css.py (not served), rec-theme-check/ (see "Patch day" below).
+  public/rec/     sign-in assets + the recorder theme (see "Recorder theme" below).
+  tools/          build-carbon-css.py (not served), rec-theme-check/ (see "Recorder updates" below).
   sites/          nginx snippets: file.conf, rec.conf, siteverify.conf.
 
 
-Summoning circle (activation)
------------------------------
+Activation
+----------
 One-line files (1Panel includes /www/sites/<site>/proxy/*.conf):
   /opt/1panel/www/sites/file.example.com/proxy/turnstile.conf -> include /www/common/turnstile/sites/file.conf;
   /opt/1panel/www/sites/rec.example.com/proxy/turnstile.conf  -> include /www/common/turnstile/sites/rec.conf;
@@ -70,7 +68,7 @@ Also required: /opt/1panel/www/conf.d/00-turnstile.conf (http level)
   lua_shared_dict site_turnstile 2m;   <- single-use token cache; Siteverify alone
                                           accepted a replayed token during testing.
 
-Unsummon: delete those two proxy/turnstile.conf files and reload OpenResty.
+Disable: delete those two proxy/turnstile.conf files and reload OpenResty.
   (rec.example.com then falls back to the recorder's own Basic prompt.)
 
 
@@ -79,7 +77,6 @@ rec.example.com sign-in (since 2026-11-10; replaced the Turnstile-only gate + br
   - Sessions: 12 h browser-session cookie, or 30 days with "Keep me signed in".
     The MAC covers rec_auth, so changing the recorder password signs everyone out.
   - 10 wrong passwords per client IP lock sign-in for 15 min (lua_shared_dict site_turnstile).
-    Brute-forcing the gate is not a viable strat.
   - After changing BREC_HTTP_BASIC_PASS in /opt/1panel/docker/compose/rec, run
       /opt/1panel/www/common/turnstile/set-rec-auth.sh
     (copies it from the container env, checks it against the recorder, reloads).
@@ -93,8 +90,8 @@ rec.example.com sign-in (since 2026-11-10; replaced the Turnstile-only gate + br
     "text/html; encoding=utf-8" type is listed in sub_filter_types. Bump ?v= after edits.
 
 
-Wardrobe (public/rec/)
-----------------------
+Recorder theme (public/rec/)
+----------------------------
   carbon.css      Carbon's compiled @carbon/styles 1.119.0 (Apache-2.0), trimmed to this page +
                   theme tokens; regenerate with tools/build-carbon-css.py from the "Carbon"
                   design-system artifact.
@@ -106,9 +103,8 @@ Wardrobe (public/rec/)
   logo.svg, fonts/  IBM Plex Sans 300/400/600 + Plex Mono 400 (fields), latin, OFL.
   Bump ASSET_V in rec_login.lua after editing anything here.
 
-  theme.css + shell.js (2026-11-13): a full IBM Carbon costume for the recorder's own pages
-  /, /ui/ (WebUI, Naive UI), /file/ and /player/. Nothing inside the recorder is changed; this is
-  a skin, not a mod.
+  theme.css + shell.js (2026-11-13): IBM Carbon theme for the recorder's own pages
+  /, /ui/ (WebUI, Naive UI), /file/ and /player/. Nothing inside the recorder is changed.
     - theme.css re-points Naive UI's --n-* variables at Carbon tokens (White / Gray 100) and
       restyles the static pages.
     - shell.js sets data-rec-page / data-rec-theme before paint, adds a Gray 100 Carbon header
@@ -122,11 +118,11 @@ Wardrobe (public/rec/)
       could change that. Backup before: turnstile-backup-20261113-theme.
 
 
-Patch day (tools/rec-theme-check/, added 2026-11-14)
-----------------------------------------------------
-  The skin lives here, not in the container, so pulling a new bililive/recorder image keeps it.
+Recorder updates (tools/rec-theme-check/, added 2026-11-14)
+-----------------------------------------------------------
+  The theme lives here, not in the container, so pulling a new bililive/recorder image keeps it.
   What can break is the fit: theme.css relies on the WebUI's Naive UI markup.
-  rec-theme-check.timer runs hourly; when rec-recorder-1 runs a new image it tests the skin
+  rec-theme-check.timer runs hourly; when rec-recorder-1 runs a new image it tests the theme
   against the new WebUI in a headless browser (check.py, image rec-theme-check:local built from
   the Dockerfile there). If it no longer fits it creates /www/common/turnstile/rec-theme.off and
   nginx (rec.conf) serves the recorder's original look; Sign out still works. A later passing
@@ -134,16 +130,16 @@ Patch day (tools/rec-theme-check/, added 2026-11-14)
     rec-theme-check.sh --status | --force      journalctl -u rec-theme-check
 
 
-Barrier (origin lockdown, 2026-11-13)
--------------------------------------
+Origin lockdown (2026-11-13)
+----------------------------
   Ports 80/443 accept only Cloudflare, loopback and Docker bridges (nftables table inet cf_origin,
   /usr/local/sbin/cf-origin-firewall.sh, systemd cf-origin-firewall.service + weekly
   -refresh.timer). So CF-Connecting-IP can be trusted, and nobody can skip Cloudflare Access by
   hitting 203.0.113.10 directly. Undo: cf-origin-firewall.sh off.
 
 
-Known glitches & notes
-----------------------
+Notes
+-----
   - openlist.js is injected as /__turnstile/openlist.js?v=N. Cloudflare and browsers cache .js
     for 4 h, so bump v= in sites/file.conf after editing the script.
   - OpenList's login page treats ANY window postMessage with a `token` field as an SSO login

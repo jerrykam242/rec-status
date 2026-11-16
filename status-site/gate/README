@@ -1,14 +1,14 @@
-rec-status · status site lore book            English | 中文: README.zh-CN
-===================================
+rec-status · status site            English | 中文: README.zh-CN
+=========================
 
-The Bard of the party: a hand-made live status page for 录播姬 (BililiveRecorder), 2026-11-13.
+Live recorder status page for BililiveRecorder (录播姬), hand-made 2026-11-13.
 Host: rec-status.example.com (the folder name stays "live"), served through Aliyun ESA.
 
 Host path /opt/1panel/www/sites/live  ==  /www/sites/live in the OpenResty container.
 
 
-Map of the dungeon
-------------------
+Files
+-----
   index/            static root.
                     index.html = the status page + request form (served only with a session).
                     privacy.html = public privacy policy (/privacy), no captcha.
@@ -16,12 +16,12 @@ Map of the dungeon
                     artifact with tools/build-carbon-css.py), gate.css (sign-in, same look as
                     rec.example.com), live.css/live.js (status page), request.js (request form),
                     gate.js (sign-in), cookie.css/cookie.js (cookie notice), nav.js, theme.js,
-                    IBM Plex fonts (OFL), logo.svg, bg.jpg / bg-mobile.webp (placeholder art).
+                    IBM Plex fonts (OFL), logo.svg, bg.jpg / bg-mobile.webp (placeholder backgrounds).
   gate/             Lua + template, not web-served:
     live_config.lua   public settings: session TTLs, request limits, asset_v, policy_version,
                       legacy ESA captcha values (captcha_prefix, captcha_scene).
     load.lua / common.lua   shared helpers (signed tokens, edge check, key files, JSON).
-    gate.lua          rewrite phase, every request (see "The gate" below).
+    gate.lua          rewrite phase, every request (see "Access control" below).
     login.lua/.html   GET /__gate/login: Carbon sign-in page with the Turnstile widget.
     ts_verify.lua     POST /__gate/check (since 2026-11-16): Turnstile sign-in. The Turnstile
                       secret lives on the recorder host, so the token is sent via the internal
@@ -36,8 +36,8 @@ Map of the dungeon
                       "ts.body", +-300 s, never older than the last one).
     status.lua        GET /api/status -> {serverTime, receivedAt, data}.
     archive.lua       GET /api/archive: rooms and dates that have recordings (for the form).
-    request.lua       POST /api/request: a visitor files a recording request (quest).
-    request_status.lua  GET /api/request/status?id=&t=: the visitor's page polls its quest.
+    request.lua       POST /api/request: a visitor submits a recording request.
+    request_status.lua  GET /api/request/status?id=&t=: the visitor's page polls its request.
     agent.lua         POST /__agent/sync: rec-request-worker (signed like /__ingest).
     review.lua        /__admin/review: signed approve/deny links from the admin email.
     store.lua / store_load.lua   requests.json + archive.json in data_dir (atomic, locked).
@@ -58,38 +58,38 @@ Map of the dungeon
                                       nonces, in memory; the agent re-sends at least every 60 s).
 
 
-The gate (gate.lua)
--------------------
+Access control (gate.lua)
+-------------------------
   1. Only requests forwarded by ESA are served (edge header, when edge_key exists).
   2. Open without a session: /__gate/*, /assets/*, /privacy, /favicon.ico, /robots.txt,
-     /__ingest and /__agent/sync (HMAC-signed by the familiars), /__admin/review (HMAC-signed
+     /__ingest and /__agent/sync (HMAC-signed by the agent and worker), /__admin/review (HMAC-signed
      links), and /api/request/status (needs the request's ticket).
   3. Passing Turnstile gives a one-time entry pass (entry_ttl, 60 s); "/" burns it and sets the
      session cookie, valid for a FIXED sess_ttl (600 s) counted from the captcha.
      Reloads, new tabs and /api/* polls inside that window need no captcha; nothing extends it.
-     When the timer runs out: back to the title screen (/__gate/login).
+     After that, everything redirects to /__gate/login.
 
 
-Recording requests (the quest board)
-------------------------------------
+Recording requests
+------------------
   - The form lists rooms/dates from /api/archive (pushed by the worker every ARCHIVE_EVERY s).
   - Limits (live_config.lua): request_per_session = 3 per sign-in, request_per_hour = 20 for
     the whole site, request_max_open = 30 awaiting review. Requests are deleted
     request_keep_days (30) after their last change.
-  - Life of a quest:
+  - Request states:
       new -> notified (worker mailed the admin) -> approved -> processing -> shared
                                                 -> denied                 -> failed
   - Review links are HMAC(admin_key, "review|id|action|exp"), valid review_days (7). Opening a
     link only shows the request and a confirm button; the decision needs a same-origin POST,
-    so mail scanners can't approve anything by "clicking" it.
+    so mail scanners that open links cannot approve anything.
   - The visitor's page waits request_wait (300 s). Decided in time -> it shows waiting /
     preparing / ready (link + code) / denied. Otherwise -> "manual". It keeps checking for a
     link for up to request_watch (1200 s).
   - Each request stores the privacy policy_version the visitor consented to.
 
 
-Save points & spells
---------------------
+Maintenance
+-----------
 Reload:   docker exec 1Panel-openresty-XXXX openresty -t && docker exec 1Panel-openresty-XXXX openresty -s reload
 Assets:   bump asset_v in live_config.lua and ?v= in index/index.html after editing anything in assets/.
 Policy:   bump policy_version after changing privacy.html.

@@ -2,25 +2,23 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-> *"The stream is over… but the VOD lives on."*
+A small, self-hosted setup around a live-stream recorder ([BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder),
+a.k.a. 录播姬) and a file server ([OpenList](https://github.com/OpenListTeam/OpenList)).
+When a streamer goes live, the recorder saves the stream; this repo adds a status page,
+a way for viewers to request recordings, and a sign-in gate in front of everything.
 
-A small, self-hosted setup built around a live-stream recorder ([BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder),
-fondly known as **录播姬**, "the Recording Princess") and a file server ([OpenList](https://github.com/OpenListTeam/OpenList)).
-Your oshi goes live, the Princess records every frame, and this repo is the castle around her:
-a status board, a quest desk for archive requests, and a gatekeeper at every door.
+## Components
 
-## The party
+| Component | What it does |
+|---|---|
+| **Status site** | A public page showing which rooms are live and being recorded, plus recent events. Visitors can request a recording through a form. Bilingual (zh/en) privacy policy and cookie notice, written for GDPR and PIPL. |
+| **Request flow** | The admin gets an email with signed approve/deny links. The visitor waits on the page for up to 5 minutes. If the request is approved in that time, the page shows the share link the worker created in OpenList. Otherwise the page says the request will be reviewed manually. |
+| **Edge gate** | OpenResty/Lua [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) checks in front of the OpenList sign-in, OpenList share links and the recorder WebUI. It also includes an IBM Carbon sign-in page and theme for the recorder. |
+| **Agent and worker** | Run on the recorder host. The agent pushes recorder state to the status site; the worker handles approved requests (copies files, creates the share, sends mail). |
 
-| Member | Class | What it does |
-|---|---|---|
-| **Status site** | Bard 🎶 | A public page showing which rooms are live and being recorded, plus recent events. Visitors can file a recording request through a form. Bilingual (zh/en) privacy policy and cookie notice, written for GDPR and PIPL. |
-| **Request flow** | Guild Receptionist 📜 | The admin gets an email with signed approve/deny links. The visitor waits on the page for up to 5 minutes. If the quest is accepted in time, the page shows the share link the worker created in OpenList. If not, the page says the request will be reviewed by hand. |
-| **Edge gate** | Gatekeeper 🛡️ | OpenResty/Lua [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) checks in front of the OpenList sign-in, OpenList share links and the recorder WebUI. It also brings an IBM Carbon sign-in page and a Carbon skin for the recorder. |
-| **Agent + worker** | Familiars 🐈 | Live on the recorder host. One reports the Princess's state to the status site; the other carries out accepted quests (copy files, create the share, send the mail). |
+All pages use [IBM Carbon](https://carbondesignsystem.com/) styling and IBM Plex fonts.
 
-Every page is dressed in [IBM Carbon](https://carbondesignsystem.com/) with IBM Plex fonts. One outfit, all routes.
-
-## World map
+## Layout
 
 ```
 status-site/          status site (OpenResty + Lua), served from /www/sites/live in the container
@@ -35,30 +33,30 @@ agent/                runs on the recorder host
 edge-gate/            Turnstile gate for the file server and recorder sites (OpenResty + Lua)
   sites/              nginx snippets to include in each site
   templates/ public/  sign-in / share check pages and assets
-  tools/rec-theme-check/  checks that the recorder skin still fits after a recorder upgrade
+  tools/rec-theme-check/  checks that the recorder theme still fits after a recorder upgrade
 ops/                  Cloudflare-only origin firewall (nftables), systemd units, logrotate
 tools/                build-carbon-css.py (trims Carbon's compiled CSS)
 ```
 
-Each area has its own lore book:
+Each component has its own notes:
 - `status-site/gate/README` ([中文](status-site/gate/README.zh-CN))
 - `edge-gate/README` ([中文](edge-gate/README.zh-CN))
 
-## How a quest runs
+## Request flow
 
 ```
-  visitor ──Turnstile──▶ status page ──form──▶ /api/request      (quest posted)
+  visitor ──Turnstile──▶ status page ──form──▶ /api/request
                                                    │
-  recorder host: rec-request-worker ◀──/__agent/sync┘            (familiar picks it up)
+  recorder host: rec-request-worker ◀──/__agent/sync┘
         │  emails admin: [批准 approve] [拒绝 deny]  (signed links, valid 7 days)
         ▼
   admin approves ──▶ worker copies the day folder to GDrive ──▶ OpenList share (code, expiry, access limit)
         │
         ▼
-  visitor's page (still waiting, up to 5 min) shows the link ✨ ── otherwise: "reviewed manually"
+  visitor's page (waits up to 5 min) shows the link ── otherwise: "reviewed manually"
 ```
 
-## Setup (the tutorial level)
+## Setup
 
 1. **Status site.** Copy `status-site/` into an OpenResty site directory and include
    `proxy/live.conf` and `conf.d/00-live.conf`. Create the root-only key files under `gate/`
@@ -69,7 +67,7 @@ Each area has its own lore book:
    and `rs_key` (`rs_key` must equal the status site's `ingest_key`).
 3. **Agent and worker.** Copy `agent/*.env.example` to `/etc/rec-status/*.env` (mode 0640),
    fill them in, and install the systemd units.
-4. **Replace every placeholder** (no NPC names left behind):
+4. Replace every placeholder:
 
 | Placeholder | Meaning |
 |---|---|
@@ -81,17 +79,15 @@ Each area has its own lore book:
 | `1Panel-openresty-XXXX` | name of your OpenResty container |
 
 > [!IMPORTANT]
-> Secrets never enter the repository. Every key file is created on the server, owned by root
-> with mode 600; see `.gitignore`. Treat them like your save file: no backup in public places.
+> Secrets are never kept in the repository. Every key file is created on the server, owned by
+> root with mode 600; see `.gitignore`.
 
 > [!NOTE]
 > The privacy policy (`status-site/index/privacy.html`) is a template. Before you use it, have
 > it reviewed for your own processing, providers and jurisdiction.
 
-## Third-party assets (credits roll)
+## Third-party assets
 
 - IBM Plex fonts: SIL Open Font License (`assets/fonts/IBM-Plex-OFL.txt`).
 - `carbon.css`: trimmed from `@carbon/styles` (Apache-2.0).
-- The background images and logo are placeholders. Swap in your own key visual.
-
-*Thanks for watching! Remember to like, follow and 一键三连.* ( •̀ ω •́ )✧
+- The background images and logo are placeholders.
