@@ -1,5 +1,5 @@
 [Unit]
-Description=rec-status request worker (recording requests: admin email, GDrive copy, OpenList share)
+Description=rec-status request worker (recording requests: admin email, archive copy, OpenList share)
 After=network-online.target docker.service
 Wants=network-online.target
 

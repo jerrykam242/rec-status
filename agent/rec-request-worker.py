@@ -8,7 +8,8 @@ IP like rec-status-agent). It sends:
   - status updates for the requests it worked on;
 and gets back the requests to act on:
   - "new":       email the admin the request with signed 批准 / 拒绝 links  -> "notified"
-  - "approved":  make sure the day folder is on GDrive (OpenList copy, missing files only),
+  - "approved":  make sure the day folder is in the archive storage (OpenList copy,
+                 missing files only),
                  create an OpenList share (code, expiry, access limit), email the admin
                  the link                                                      -> "shared"
                  (or "failed", with an email saying why)
@@ -47,10 +48,12 @@ OL_USER = E.get("OPENLIST_USER", "")
 OL_PASS = E.get("OPENLIST_PASSWORD", "")
 OL_TOKEN = E.get("OPENLIST_TOKEN", "")         # tests only: a fixed token instead of user/password
 LOCAL_ROOT = E.get("LOCAL_ROOT", "/local/openlist").rstrip("/")
-GDRIVE_ROOT = E.get("GDRIVE_ROOT", "/GDrive/录播").rstrip("/")   # where the nightly TaoSync copy lands
-# Further archive folders on GDrive with the same layout (';'-separated), e.g. older recordings.
-EXTRA_ROOTS = [r.rstrip("/") for r in E.get("EXTRA_ROOTS", "/GDrive/Archive").split(";") if r.strip()]
-ARCHIVE_ROOTS = [GDRIVE_ROOT] + EXTRA_ROOTS
+# Main archive folder in OpenList: any storage provider mounted there (cloud drive, S3, NAS ...),
+# where recordings are synced from LOCAL_ROOT. GDRIVE_ROOT is still read as an older name.
+ARCHIVE_ROOT = (E.get("ARCHIVE_ROOT") or E.get("GDRIVE_ROOT") or "/Archive/录播").rstrip("/")
+# Further archive folders with the same layout (';'-separated), e.g. older recordings.
+EXTRA_ROOTS = [r.rstrip("/") for r in E.get("EXTRA_ROOTS", "").split(";") if r.strip()]
+ARCHIVE_ROOTS = [ARCHIVE_ROOT] + EXTRA_ROOTS
 SHARE_BASE = E.get("SHARE_BASE", "https://file.example.com").rstrip("/")
 SHARE_DAYS = int(E.get("SHARE_DAYS", "7"))
 SHARE_MAX_ACCESS = int(E.get("SHARE_MAX_ACCESS", "10"))
@@ -237,7 +240,7 @@ def room_items(ol, root, folder, refresh):
 
 
 def build_index(ol, refresh, only_room=None):
-    """{roomId: {"name":, "folders": {root: folder}, "dates": {date: [paths on GDrive]},
+    """{roomId: {"name":, "folders": {root: folder}, "dates": {date: [paths in the archive]},
     "local": {date}}} across ARCHIVE_ROOTS and LOCAL_ROOT."""
     rooms = {}
     for root in ARCHIVE_ROOTS + [LOCAL_ROOT]:
@@ -245,7 +248,7 @@ def build_index(ol, refresh, only_room=None):
             if only_room and rid != only_room:
                 continue
             r = rooms.setdefault(rid, {"name": disp, "folders": {}, "dates": {}, "local": set()})
-            if root == GDRIVE_ROOT:
+            if root == ARCHIVE_ROOT:
                 r["name"] = disp          # the live recorder's own naming wins
             r["folders"][root] = folder
             for d, paths in room_items(ol, root, folder, refresh).items():
@@ -432,9 +435,9 @@ class Fail(Exception):
 
 
 def missing_files(ol, folder, date):
-    """Files in the local day folder that the live archive (GDRIVE_ROOT) lacks."""
+    """Files in the local day folder that the live archive (ARCHIVE_ROOT) lacks."""
     local = ol.ls("%s/%s/%s" % (LOCAL_ROOT, folder, date), refresh=True) or {}
-    gd = ol.ls("%s/%s/%s" % (GDRIVE_ROOT, folder, date), refresh=True) or {}
+    gd = ol.ls("%s/%s/%s" % (ARCHIVE_ROOT, folder, date), refresh=True) or {}
     return sorted({n for n, d in local.items() if not d} - {n for n, d in gd.items() if not d})
 
 
@@ -466,29 +469,29 @@ def process(ol, r, loc):
     if not loc.get("copied") and local_folder and date in room["local"]:
         missing = missing_files(ol, local_folder, date)
         if missing:
-            folder = room["folders"].get(GDRIVE_ROOT, local_folder)
+            folder = room["folders"].get(ARCHIVE_ROOT, local_folder)
             if not loc.get("copyStarted"):
-                if ol.ls("%s/%s" % (GDRIVE_ROOT, folder)) is None:
-                    ol.call("POST", "/api/fs/mkdir", {"path": "%s/%s" % (GDRIVE_ROOT, folder)})
+                if ol.ls("%s/%s" % (ARCHIVE_ROOT, folder)) is None:
+                    ol.call("POST", "/api/fs/mkdir", {"path": "%s/%s" % (ARCHIVE_ROOT, folder)})
                 ol.call("POST", "/api/fs/copy", {
-                    "src_dir": "%s/%s" % (LOCAL_ROOT, local_folder), "dst_dir": "%s/%s" % (GDRIVE_ROOT, folder),
+                    "src_dir": "%s/%s" % (LOCAL_ROOT, local_folder), "dst_dir": "%s/%s" % (ARCHIVE_ROOT, folder),
                     "names": [date], "merge": True, "skip_existing": True})
                 loc["copyStarted"] = time.time()
-                log.info("%s: copying %d file(s) to GDrive", r["id"], len(missing))
+                log.info("%s: copying %d file(s) to the archive", r["id"], len(missing))
             elif time.time() - loc["copyStarted"] > COPY_TIMEOUT:
-                raise Fail("复制到 GDrive 超时（仍缺 %d 个文件）" % len(missing))
+                raise Fail("复制到存档存储超时（仍缺 %d 个文件）" % len(missing))
             else:
                 undone = ol.call("GET", "/api/task/copy/undone") or []
                 if not undone:
                     errs = copy_failures(ol, loc["copyStarted"])
                     if errs:
-                        raise Fail("复制到 GDrive 失败：" + "; ".join(errs)[:200])
+                        raise Fail("复制到存档存储失败：" + "; ".join(errs)[:200])
                     loc["copyStarted"] = None     # finished but files still missing: another pass
             return "processing"
     loc["copied"] = True
     if not loc.get("share"):
         room = build_index(ol, refresh=True, only_room=r["roomId"]).get(r["roomId"]) or room
-        # One entry per name (a share lists items by name); GDRIVE_ROOT comes first, so it wins.
+        # One entry per name (a share lists items by name); ARCHIVE_ROOT comes first, so it wins.
         files, seen = [], set()
         for path in room["dates"].get(date, []):
             base = path.rsplit("/", 1)[-1]
@@ -496,7 +499,7 @@ def process(ol, r, loc):
                 seen.add(base)
                 files.append(path)
         if not files:
-            raise Fail("GDrive 上没有该日期的录像文件")
+            raise Fail("存档存储中没有该日期的录像文件")
         loc["files"] = files
         exp = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=SHARE_DAYS)
         pwd = "".join(secrets.choice("abcdefghjkmnpqrstuvwxyz23456789") for _ in range(6))

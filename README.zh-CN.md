@@ -15,7 +15,7 @@
 | **状态站** | 公开页面，显示哪些直播间正在直播 / 录制，以及最近的事件；访客可以通过表单申请录播。附带中英双语隐私政策和 Cookie 提示，按 GDPR 和 PIPL 编写。 |
 | **申请流程** | 管理员收到一封带签名「批准 / 拒绝」链接的邮件。访客在页面上最多等待 5 分钟：期间申请获批，页面就会显示 worker 在 OpenList 里创建的分享链接；否则提示将转人工审核。 |
 | **边缘网关** | 基于 OpenResty/Lua 的 [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) 校验，位于 OpenList 登录、OpenList 分享链接和录播姬 WebUI 之前。还包含 IBM Carbon 风格的登录页和录播姬主题。 |
-| **Agent 和 worker** | 运行在录播机上。agent 把录播姬状态推送到状态站；worker 处理已批准的申请（复制文件、创建分享、发邮件）。 |
+| **Agent 和 worker** | 运行在录播机上。agent 把录播姬状态推送到状态站；worker 处理已批准的申请（复制文件、创建分享、发邮件）。录像存档到你在 OpenList 中挂载的任意存储（`ARCHIVE_ROOT`）：网盘、S3、WebDAV、NAS 等均可。 |
 
 所有页面使用 [IBM Carbon](https://carbondesignsystem.com/) 样式和 IBM Plex 字体。
 
@@ -64,7 +64,7 @@ docs/                 仓库标志和 README 截图
   录播机：rec-request-worker ◀──/__agent/sync┘
         │  给管理员发邮件：[批准] [拒绝]（签名链接，7 天有效）
         ▼
-  管理员批准 ──▶ worker 把当天的文件夹复制到 GDrive ──▶ OpenList 分享（提取码、有效期、访问次数上限）
+  管理员批准 ──▶ worker 把当天的文件夹复制到存档存储 ──▶ OpenList 分享（提取码、有效期、访问次数上限）
         │
         ▼
   访客页面（最多等待 5 分钟）显示链接 ── 否则提示「转人工审核」
