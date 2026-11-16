@@ -106,3 +106,10 @@ Each component has its own notes:
 - IBM Plex fonts: SIL Open Font License (`assets/fonts/IBM-Plex-OFL.txt`).
 - `carbon.css`: trimmed from `@carbon/styles` (Apache-2.0).
 - The background images and logo are placeholders.
+
+## Acknowledgements
+
+This project is built around [BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder)
+(录播姬), which does the actual recording; rec-status only reads its REST API and webhooks and
+re-themes its WebUI from the outside. Many thanks to the BililiveRecorder developers and
+contributors. rec-status is an independent project and is not affiliated with or endorsed by them.

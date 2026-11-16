@@ -103,3 +103,9 @@ docs/                 仓库标志和 README 截图
 - IBM Plex 字体：SIL Open Font License（`assets/fonts/IBM-Plex-OFL.txt`）。
 - `carbon.css`：裁剪自 `@carbon/styles`（Apache-2.0）。
 - 背景图和 Logo 均为占位图。
+
+## 致谢
+
+本项目围绕 [录播姬（BililiveRecorder）](https://github.com/BililiveRecorder/BililiveRecorder) 搭建，
+真正的录制工作都由录播姬完成；rec-status 只读取它的 REST API 和 Webhook，并在外部为它的 WebUI 换上主题。
+衷心感谢录播姬的开发者和所有贡献者。rec-status 是独立项目，与录播姬项目没有关联，也未获其背书。
