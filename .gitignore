@@ -2,6 +2,7 @@
 **/cookie_key
 **/ingest_key
 **/edge_key
+**/admin_key
 **/rs_key
 **/secret
 **/rec_auth

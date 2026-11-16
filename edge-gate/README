@@ -1,12 +1,19 @@
-Cloudflare Turnstile for file.example.com and rec.example.com
-=========================================================
-Sitekey: YOUR_TURNSTILE_SITEKEY  (widget domains must include both hosts)
+rec-status · edge gate            English | 中文: README.zh-CN
+=======================
+
+Cloudflare Turnstile for file.example.com (OpenList) and rec.example.com (the recorder WebUI).
+
+Sitekey: YOUR_TURNSTILE_SITEKEY  (the widget's domains must include both hosts)
 
 Host path /opt/1panel/www/common/turnstile  ==  /www/common/turnstile in the OpenResty container.
 
+
+Files
+-----
   secret          Turnstile secret key (root 600). Write it with set-secret.sh.
-  cookie_key      Random HMAC key for rec.example.com's session cookie (root 600).
+  cookie_key      random HMAC key for the session/share cookies (root 600).
   rec_auth        "user:pass" of the recorder's Basic auth (root 600). Write it with set-rec-auth.sh.
+  rs_key          root 600; same value as the status site's ingest_key (see rs_verify.lua).
   turnstile.lua   Siteverify + cookie helpers.
   file_gate.lua   file.example.com: blocks /api/auth/login* without a valid X-Turnstile-Token.
                   SSO (2026-11-13; Microsoft sign-in used to skip Turnstile entirely):
@@ -27,14 +34,10 @@ Host path /opt/1panel/www/common/turnstile  ==  /www/common/turnstile in the Ope
                   POSTs to /__turnstile/share (same-origin only; only /@s/ return paths). Called
                   first thing from file_gate.lua. Downloads therefore need the browser that passed
                   the check (download managers without its cookie are sent to the share page).
-  public/openlist.js also shows the cookie notice (only necessary cookies; acknowledgement in
-                  localStorage "site.cookie-notice"); the policy lives at
-                  https://rec-status.example.com/privacy (source status-site/index/privacy.html).
   rs_verify.lua   POST /__turnstile/rs-verify (own location in sites/file.conf): Turnstile check for
                   rec-status.example.com's sign-in, called by that server. Signed: X-RS-Ts + X-RS-Sig =
-                  hex HMAC-SHA1(rs_key, "rs-verify|ts|body"); rs_key (root 600) = rec-status ingest_key
-                  (= PUSH_KEY in /etc/rec-status/request-worker.env). Checks action rec-status and
-                  hostname rec-status.example.com, single use. Reload after changing rs_key (cached).
+                  hex HMAC-SHA1(rs_key, "rs-verify|ts|body"). Checks action rec-status and hostname
+                  rec-status.example.com, single use. Reload after changing rs_key (it's cached).
   rec_auth.lua    rec.example.com: credential check, session cookie (site_rec), lockout.
   rec_gate.lua    rec.example.com: no valid session -> 302 to /__turnstile/login (401 JSON for
                   non-GET); valid session -> adds the recorder's Basic Authorization upstream.
@@ -44,41 +47,33 @@ Host path /opt/1panel/www/common/turnstile  ==  /www/common/turnstile in the Ope
   rec_login.lua   rec.example.com: GET/POST /__turnstile/login, IBM Carbon sign-in page.
                   POST checks Turnstile (action rec-login), then username/password.
   rec_logout.lua  rec.example.com: /__turnstile/logout clears the session.
-  templates/      rec_login.html (rendered by rec_login.lua; not served directly).
-  public/         openlist.js (widget on OpenList login).
-  public/rec/     sign-in assets: carbon.css (Carbon's compiled @carbon/styles 1.119.0,
-                  Apache-2.0, trimmed to this page + theme tokens; regenerate with
-                  tools/build-carbon-css.py from the "Carbon" design-system artifact),
-                  rec.css (phones/tablets: centred card, 16px text, 56px fields; desktop >=66rem:
-                  photo bg.jpg (placeholder; credit label .rec-credit) at 110% of
-                  screen height over a blurred copy of itself; sign-in in a floating
-                  blurred-glass 26rem box on the right, 48px fields; footer inside the box),
-                  login.js (password toggle, focus), signout.js, logo.svg,
-                  fonts/ IBM Plex Sans 300/400/600 + Plex Mono 400 (fields), latin, OFL.
-                  Bump ASSET_V in rec_login.lua after editing anything here
-                  (and ?v= in sites/rec.conf after editing signout.js).
-                  theme.css + shell.js (2026-11-13): IBM Carbon theme for the recorder's own
-                  pages /, /ui/ (WebUI, Naive UI), /file/ and /player/. Nothing in the recorder
-                  is changed. theme.css re-points Naive UI's --n-* variables at Carbon tokens
-                  (White / Gray 100) and restyles the static pages. shell.js sets
-                  data-rec-page / data-rec-theme before paint, adds a Gray 100 Carbon header
-                  (nav, light/dark switch, Sign out) to the static pages and puts Sign out in
-                  the WebUI header. Light/dark follows the WebUI's own switch (localStorage
-                  "brec.theme", dark by default); the static pages' switch writes the same key.
-                  Other recorder pages (Swagger, GraphiQL ...) only get the floating Sign out
-                  button, also from shell.js. signout.js is no longer referenced.
-                  Bump ?v= in sites/rec.conf after editing either file.
-                  Naive UI marks quaternary/tertiary buttons only in its theme-class hash
-                  (e.g. "__button-dark-dhlmmd"), so theme.css matches [class*="hl"] etc.; a
-                  WebUI upgrade could change that. Backup before: turnstile-backup-20261113-theme.
-  tools/          build-carbon-css.py (not served).
-  sites/          nginx snippets.
+  templates/      rec_login.html (rendered by rec_login.lua), share_gate.html (share check page).
+                  Neither is served directly.
+  public/         openlist.js (widget on the OpenList sign-in; also shows the cookie notice:
+                  only necessary cookies, acknowledgement kept in localStorage
+                  "site.cookie-notice"; the policy lives at https://rec-status.example.com/privacy,
+                  source status-site/index/privacy.html), share.js + share.css (share check page).
+  public/rec/     sign-in assets + the recorder theme (see "Recorder theme" below).
+  tools/          build-carbon-css.py (not served), rec-theme-check/ (see "Recorder updates" below).
+  sites/          nginx snippets: file.conf, rec.conf, siteverify.conf.
 
-Activated by these one-line files (1Panel includes /www/sites/<site>/proxy/*.conf):
+
+Activation
+----------
+One-line files (1Panel includes /www/sites/<site>/proxy/*.conf):
   /opt/1panel/www/sites/file.example.com/proxy/turnstile.conf -> include /www/common/turnstile/sites/file.conf;
   /opt/1panel/www/sites/rec.example.com/proxy/turnstile.conf  -> include /www/common/turnstile/sites/rec.conf;
 
-rec.example.com sign-in (since 2026-11-10, replaced the Turnstile-only gate + browser Basic prompt)
+Also required: /opt/1panel/www/conf.d/00-turnstile.conf (http level)
+  lua_shared_dict site_turnstile 2m;   <- single-use token cache; Siteverify alone
+                                          accepted a replayed token during testing.
+
+Disable: delete those two proxy/turnstile.conf files and reload OpenResty.
+  (rec.example.com then falls back to the recorder's own Basic prompt.)
+
+
+rec.example.com sign-in (since 2026-11-10; replaced the Turnstile-only gate + browser Basic prompt)
+--------------------------------------------------------------------------------------------------
   - Sessions: 12 h browser-session cookie, or 30 days with "Keep me signed in".
     The MAC covers rec_auth, so changing the recorder password signs everyone out.
   - 10 wrong passwords per client IP lock sign-in for 15 min (lua_shared_dict site_turnstile).
@@ -90,39 +85,68 @@ rec.example.com sign-in (since 2026-11-10, replaced the Turnstile-only gate + br
     '</html>' in sites/rec.conf (header action on themed pages, floating button elsewhere).
     theme.css + shell.js are also added after <meta charset> on /, /ui/, /file/, /player/
     ($rec_theme). /file/ listings have no Content-Type, so a header_filter_by_lua_block in
-    rec.conf labels them text/html for sub_filter. rec_gate.lua drops
-    Accept-Encoding on HTML requests so sub_filter sees plain HTML; the WebUI's odd
+    rec.conf labels them text/html for sub_filter. rec_gate.lua drops Accept-Encoding on
+    HTML requests so sub_filter sees plain HTML; the WebUI's odd
     "text/html; encoding=utf-8" type is listed in sub_filter_types. Bump ?v= after edits.
 
-Disable: delete those two proxy/turnstile.conf files and reload OpenResty.
-  (rec.example.com then falls back to the recorder's own Basic prompt.)
-After changing secret or cookie_key: reload OpenResty
-  sudo docker exec 1Panel-openresty-XXXX openresty -s reload
-Rejections are logged (level error) in each site's log/error.log ("turnstile:").
 
-Also required: /opt/1panel/www/conf.d/00-turnstile.conf (http level)
-  lua_shared_dict site_turnstile 2m;   <- single-use token cache; Siteverify alone
-                                          accepted a replayed token during testing.
+Recorder theme (public/rec/)
+----------------------------
+  carbon.css      Carbon's compiled @carbon/styles 1.119.0 (Apache-2.0), trimmed to this page +
+                  theme tokens; regenerate with tools/build-carbon-css.py from the "Carbon"
+                  design-system artifact.
+  rec.css         phones/tablets: centred card, 16px text, 56px fields. Desktop >= 66rem: photo
+                  bg.jpg (placeholder; credit label .rec-credit) at 110% of screen height over a
+                  blurred copy of itself; sign-in in a floating blurred-glass 26rem box on the
+                  right, 48px fields; footer inside the box.
+  login.js        password toggle, focus.   signout.js  (no longer referenced).
+  logo.svg, fonts/  IBM Plex Sans 300/400/600 + Plex Mono 400 (fields), latin, OFL.
+  Bump ASSET_V in rec_login.lua after editing anything here.
 
-Notes
-- openlist.js is injected as /__turnstile/openlist.js?v=N. Cloudflare and browsers cache
-  .js for 4 h, so bump v= in sites/file.conf after editing the script.
-- OpenList's login page treats ANY window postMessage with a `token` field as an SSO login
-  (no origin check). Turnstile's iframe posts such messages, so openlist.js hides
-  messages from https://challenges.cloudflare.com from every listener except Turnstile's.
-  Without that, the login page loops / -> /@login with "Token is invalidated".
-- WebDAV (/dav) and passkey logins do not go through Turnstile (passkey login is disabled).
+  theme.css + shell.js (2026-11-13): IBM Carbon theme for the recorder's own pages
+  /, /ui/ (WebUI, Naive UI), /file/ and /player/. Nothing inside the recorder is changed.
+    - theme.css re-points Naive UI's --n-* variables at Carbon tokens (White / Gray 100) and
+      restyles the static pages.
+    - shell.js sets data-rec-page / data-rec-theme before paint, adds a Gray 100 Carbon header
+      (nav, light/dark switch, Sign out) to the static pages and puts Sign out in the WebUI
+      header. Light/dark follows the WebUI's own switch (localStorage "brec.theme", dark by
+      default); the static pages' switch writes the same key.
+    - Other recorder pages (Swagger, GraphiQL ...) only get the floating Sign out button.
+    - Bump ?v= in sites/rec.conf after editing either file.
+    - Naive UI marks quaternary/tertiary buttons only in its theme-class hash
+      (e.g. "__button-dark-dhlmmd"), so theme.css matches [class*="hl"] etc.; a WebUI upgrade
+      could change that. Backup before: turnstile-backup-20261113-theme.
 
-Origin lockdown (2026-11-13): ports 80/443 accept only Cloudflare, loopback and Docker
-bridges (nftables table inet cf_origin, /usr/local/sbin/cf-origin-firewall.sh, systemd
-cf-origin-firewall.service + weekly -refresh.timer). So CF-Connecting-IP can be trusted and
-Cloudflare Access cannot be skipped by hitting 203.0.113.10. Undo: cf-origin-firewall.sh off.
 
 Recorder updates (tools/rec-theme-check/, added 2026-11-14)
+-----------------------------------------------------------
   The theme lives here, not in the container, so pulling a new bililive/recorder image keeps it.
-  What can break is the fit: theme.css relies on the WebUI's Naive UI markup. rec-theme-check.timer
-  runs hourly; when rec-recorder-1 runs a new image it tests the theme against the new WebUI in a
-  headless browser (check.py, image rec-theme-check:local built from the Dockerfile there).
-  If it no longer fits it creates /www/common/turnstile/rec-theme.off and nginx (rec.conf) serves
-  the recorder's original look, Sign out still works. A later passing check removes the file.
+  What can break is the fit: theme.css relies on the WebUI's Naive UI markup.
+  rec-theme-check.timer runs hourly; when rec-recorder-1 runs a new image it tests the theme
+  against the new WebUI in a headless browser (check.py, image rec-theme-check:local built from
+  the Dockerfile there). If it no longer fits it creates /www/common/turnstile/rec-theme.off and
+  nginx (rec.conf) serves the recorder's original look; Sign out still works. A later passing
+  check removes the file again.
     rec-theme-check.sh --status | --force      journalctl -u rec-theme-check
+
+
+Origin lockdown (2026-11-13)
+----------------------------
+  Ports 80/443 accept only Cloudflare, loopback and Docker bridges (nftables table inet cf_origin,
+  /usr/local/sbin/cf-origin-firewall.sh, systemd cf-origin-firewall.service + weekly
+  -refresh.timer). So CF-Connecting-IP can be trusted, and nobody can skip Cloudflare Access by
+  hitting 203.0.113.10 directly. Undo: cf-origin-firewall.sh off.
+
+
+Notes
+-----
+  - openlist.js is injected as /__turnstile/openlist.js?v=N. Cloudflare and browsers cache .js
+    for 4 h, so bump v= in sites/file.conf after editing the script.
+  - OpenList's login page treats ANY window postMessage with a `token` field as an SSO login
+    (no origin check). Turnstile's iframe posts such messages, so openlist.js hides messages
+    from https://challenges.cloudflare.com from every listener except Turnstile's. Without that,
+    the login page loops / -> /@login with "Token is invalidated".
+  - WebDAV (/dav) and passkey logins do not go through Turnstile (passkey login is disabled).
+  - After changing secret or cookie_key: reload OpenResty
+      sudo docker exec 1Panel-openresty-XXXX openresty -s reload
+  - Rejections are logged (level error) in each site's log/error.log ("turnstile:").

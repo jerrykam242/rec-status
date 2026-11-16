@@ -1,20 +1,24 @@
 # rec-status
 
-A small, self-hosted setup around a live-stream recorder ([BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder))
-and a file server ([OpenList](https://github.com/OpenListTeam/OpenList)):
+**English** · [简体中文](README.zh-CN.md)
 
-- **Status site**: a public page that shows which rooms are being recorded and recent
-  events, plus a form where visitors can request a recording. Bilingual (zh/en) privacy
-  policy and cookie notice, written for GDPR and PIPL.
-- **Request flow**: the admin gets an email with signed approve/deny links. The visitor waits
-  on the page for up to 5 minutes. If the request is approved in that time, the page shows a
-  share link the worker created in OpenList. Otherwise the page says the request will be
-  reviewed manually.
-- **Edge gate**: OpenResty/Lua [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)
-  checks in front of the OpenList sign-in, OpenList share links and the recorder WebUI. It also
-  includes an IBM Carbon sign-in page and theme for the recorder.
+A small, self-hosted setup around a live-stream recorder ([BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder),
+a.k.a. 录播姬) and a file server ([OpenList](https://github.com/OpenListTeam/OpenList)).
+When a streamer goes live, the recorder saves the stream; this repo adds a status page,
+a way for viewers to request recordings, and a sign-in gate in front of everything.
+
+## Components
+
+| Component | What it does |
+|---|---|
+| **Status site** | A public page showing which rooms are live and being recorded, plus recent events. Visitors can request a recording through a form. Bilingual (zh/en) privacy policy and cookie notice, written for GDPR and PIPL. |
+| **Request flow** | The admin gets an email with signed approve/deny links. The visitor waits on the page for up to 5 minutes. If the request is approved in that time, the page shows the share link the worker created in OpenList. Otherwise the page says the request will be reviewed manually. |
+| **Edge gate** | OpenResty/Lua [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) checks in front of the OpenList sign-in, OpenList share links and the recorder WebUI. It also includes an IBM Carbon sign-in page and theme for the recorder. |
+| **Agent and worker** | Run on the recorder host. The agent pushes recorder state to the status site; the worker handles approved requests (copies files, creates the share, sends mail). |
 
 All pages use [IBM Carbon](https://carbondesignsystem.com/) styling and IBM Plex fonts.
+
+## Layout
 
 ```
 status-site/          status site (OpenResty + Lua), served from /www/sites/live in the container
@@ -34,14 +38,30 @@ ops/                  Cloudflare-only origin firewall (nftables), systemd units,
 tools/                build-carbon-css.py (trims Carbon's compiled CSS)
 ```
 
-The component READMEs explain each piece in detail: `status-site/gate/README` and `edge-gate/README`.
+Each component has its own notes:
+- `status-site/gate/README` ([中文](status-site/gate/README.zh-CN))
+- `edge-gate/README` ([中文](edge-gate/README.zh-CN))
 
-## Setup outline
+## Request flow
+
+```
+  visitor ──Turnstile──▶ status page ──form──▶ /api/request
+                                                   │
+  recorder host: rec-request-worker ◀──/__agent/sync┘
+        │  emails admin: [批准 approve] [拒绝 deny]  (signed links, valid 7 days)
+        ▼
+  admin approves ──▶ worker copies the day folder to GDrive ──▶ OpenList share (code, expiry, access limit)
+        │
+        ▼
+  visitor's page (waits up to 5 min) shows the link ── otherwise: "reviewed manually"
+```
+
+## Setup
 
 1. **Status site.** Copy `status-site/` into an OpenResty site directory and include
-   `proxy/live.conf` and `conf.d/00-live.conf`. Then create the root-only key files under `gate/`
-   (`cookie_key`, `ingest_key`, optionally `edge_key`) with random hex values. Set
-   `public_url` and the captcha values in `gate/live_config.lua`.
+   `proxy/live.conf` and `conf.d/00-live.conf`. Create the root-only key files under `gate/`
+   with random hex values: `cookie_key`, `ingest_key`, `admin_key` (signs the review links), and
+   optionally `edge_key`. Set `public_url` and the captcha values in `gate/live_config.lua`.
 2. **Edge gate.** Copy `edge-gate/` to `/www/common/turnstile` and include `sites/*.conf` in
    the matching sites. Store the Turnstile secret with `set-secret.sh` and create `cookie_key`
    and `rs_key` (`rs_key` must equal the status site's `ingest_key`).
@@ -58,11 +78,13 @@ The component READMEs explain each piece in detail: `status-site/gate/README` an
 | `esa-xxxxxxxxxx`, `SCENE_ID`, `<rule-id>` | captcha values from the CDN edge (optional; Turnstile is used now) |
 | `1Panel-openresty-XXXX` | name of your OpenResty container |
 
-Secrets are never kept in the repository. Every key file is created on the server, owned by
-root with mode 600; see `.gitignore`.
+> [!IMPORTANT]
+> Secrets are never kept in the repository. Every key file is created on the server, owned by
+> root with mode 600; see `.gitignore`.
 
-The privacy policy (`status-site/index/privacy.html`) is a template. Before you use it, have it
-reviewed for your own processing, providers and jurisdiction.
+> [!NOTE]
+> The privacy policy (`status-site/index/privacy.html`) is a template. Before you use it, have
+> it reviewed for your own processing, providers and jurisdiction.
 
 ## Third-party assets
 

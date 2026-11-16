@@ -1,0 +1,91 @@
+rec-status · 状态站            English: README | 中文
+===================
+
+录播姬（BililiveRecorder）的直播状态页，2026-11-13 手工搭建。
+域名：rec-status.example.com（目录名仍叫 "live"），经由阿里云 ESA 访问。
+
+宿主机路径 /opt/1panel/www/sites/live  ==  OpenResty 容器内的 /www/sites/live。
+
+
+文件说明
+--------
+  index/            静态根目录。
+                    index.html = 状态页 + 申请表单（只对已登录会话开放）。
+                    privacy.html = 公开的隐私政策（/privacy），无需验证码。
+                    assets/ = Carbon CSS（carbon.css，用 tools/build-carbon-css.py 从 "Carbon"
+                    设计系统 artifact 裁剪而来）、gate.css（登录页，与 rec.example.com 同款外观）、
+                    live.css/live.js（状态页）、request.js（申请表单）、gate.js（登录）、
+                    cookie.css/cookie.js（Cookie 提示）、nav.js、theme.js、IBM Plex 字体（OFL）、
+                    logo.svg、bg.jpg / bg-mobile.webp（占位图）。
+  gate/             Lua + 模板，不对外提供：
+    live_config.lua   公开配置：会话时长、申请限额、asset_v、policy_version，以及旧版 ESA
+                      验证码参数（captcha_prefix 身份标、captcha_scene 场景 ID）。
+    load.lua / common.lua   公共函数（签名令牌、边缘校验、密钥文件、JSON）。
+    gate.lua          rewrite 阶段，每个请求都要过（见下文「访问控制」）。
+    login.lua/.html   GET /__gate/login：Carbon 风格登录页，内嵌 Turnstile 组件。
+    ts_verify.lua     POST /__gate/check（2026-11-16 起）：Turnstile 登录。Turnstile secret 存在
+                      录播机上，所以 token 经内部 location /__ts_check 发往
+                      https://file.example.com/__turnstile/rs-verify，用 ingest_key 签名
+                      （HMAC-SHA1，内容 "rs-verify|ts|body"）。通过后发放一次性 live_entry 通行证。
+    verify.lua        POST /__gate/verify：旧的 ESA AI 验证码路径（ESA 规则「需验签的接口」，POST，
+                      且必须打开「拦截空 Token」，否则 ESA 什么都不查）。作为备用保留，
+                      见 live_config.lua 里的 captcha_trust_esa。
+    logout.lua        /__gate/logout。
+    ingest.lua        POST /__ingest，来自 rec-status-agent（用 ingest_key 对 "ts.body" 做
+                      HMAC-SHA1，时间差 ±300 秒，且不能早于上一次）。
+    status.lua        GET /api/status -> {serverTime, receivedAt, data}。
+    archive.lua       GET /api/archive：有录播的直播间和日期（供表单使用）。
+    request.lua       POST /api/request：访客提交录播申请。
+    request_status.lua  GET /api/request/status?id=&t=：访客页面轮询申请进度。
+    agent.lua         POST /__agent/sync：rec-request-worker 专用（签名方式同 /__ingest）。
+    review.lua        /__admin/review：管理员邮件里带签名的「批准 / 拒绝」链接。
+    store.lua / store_load.lua   data_dir 下的 requests.json + archive.json（原子写入、加锁）。
+    cookie_key        root 600，随机值。轮换后所有已登录会话立即失效。
+    ingest_key        root 600。与录播机（203.0.113.10）上 /etc/rec-status/agent.env 和
+                      request-worker.env 里的 PUSH_KEY 相同，也与边缘网关的 rs_key 相同。
+    admin_key         root 600，随机值。给审核链接签名。轮换后已发出的链接全部作废。
+    edge_key          root 600。ESA 规则须在回源请求里加上请求头 "X-Live-Edge: <edge_key>"。
+                      没有这个文件时边缘校验关闭（会记录警告）。
+  proxy/live.conf   location + rewrite_by_lua（由 server 块 include）。
+  data/             requests.json、archive.json（仅 root 可读，不对外提供，不进 git）。
+  log/              access.log、error.log。
+/opt/1panel/www/conf.d/rec-status.example.com.conf   server 块（使用站点 e5 的 *.example.com 证书）。
+/opt/1panel/www/conf.d/00-live.conf   lua_shared_dict live_status（最新快照、计数器和 nonce，
+                                      存在内存里；agent 至少每 60 秒重发一次）。
+
+
+访问控制（gate.lua）
+--------------------
+  1. 只服务经 ESA 转发的请求（存在 edge_key 时校验边缘请求头）。
+  2. 无需会话即可访问：/__gate/*、/assets/*、/privacy、/favicon.ico、/robots.txt、
+     /__ingest 和 /__agent/sync（agent 和 worker 的 HMAC 签名）、/__admin/review（签名链接）、
+     /api/request/status（需要该申请的 ticket）。
+  3. 通过 Turnstile 后获得一次性入场券（entry_ttl，60 秒）；访问 "/" 时消耗入场券并设置会话
+     Cookie，有效期为从验证那一刻起【固定】的 sess_ttl（600 秒）。
+     期间刷新、开新标签页、/api/* 轮询都不需要再验证；任何操作都不会续期。
+     到期后所有请求都跳转到 /__gate/login。
+
+
+录播申请
+--------
+  - 表单里的直播间 / 日期来自 /api/archive（worker 每 ARCHIVE_EVERY 秒推送一次）。
+  - 限额（live_config.lua）：request_per_session = 每次登录 3 个，request_per_hour = 全站每小时
+    20 个，request_max_open = 最多 30 个待审核。申请在最后一次变更 request_keep_days（30）天后删除。
+  - 申请状态：
+      new -> notified（worker 已发邮件给管理员）-> approved -> processing -> shared
+                                                -> denied                 -> failed
+  - 审核链接为 HMAC(admin_key, "review|id|action|exp")，有效期 review_days（7 天）。
+    打开链接只会显示申请内容和确认按钮；决定需要同源 POST 才生效，
+    所以邮件安全扫描器打开链接也无法批准任何申请。
+  - 访客页面等待 request_wait（300 秒）。期间有结果 -> 显示 waiting / preparing /
+    ready（链接 + 提取码）/ denied；否则 -> "manual"（转人工）。之后最多继续检查
+    request_watch（1200 秒）看链接是否生成。
+  - 每条申请都会记录访客同意时的隐私政策版本 policy_version。
+
+
+维护
+----
+重载：     docker exec 1Panel-openresty-XXXX openresty -t && docker exec 1Panel-openresty-XXXX openresty -s reload
+静态资源： 修改 assets/ 后，把 live_config.lua 的 asset_v 和 index/index.html 里的 ?v= 都加一。
+隐私政策： 修改 privacy.html 后更新 policy_version。
+唯一真相来源：本仓库（status-site/）。
