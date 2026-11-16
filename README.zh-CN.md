@@ -35,7 +35,7 @@
 
 ```
 status-site/          状态站（OpenResty + Lua），容器内路径 /www/sites/live
-  index/              静态页面：index.html（状态 + 申请表单）、privacy.html、assets/
+  index/              静态页面：index.html（状态 + 申请表单）、privacy.html、terms.html、assets/
   gate/               Lua：登录校验、数据接收、状态 API、申请、审核链接、存储
   proxy/ server/      nginx 的 location 与 server 块
   conf.d/             http 级共享字典
@@ -96,7 +96,7 @@ docs/                 仓库标志和 README 截图
 > 密钥永远不放进仓库。所有密钥文件都在服务器上创建，属主 root，权限 600，见 `.gitignore`。
 
 > [!NOTE]
-> 隐私政策（`status-site/index/privacy.html`）只是模板。使用前请按你自己的数据处理方式、服务商和适用法律请人审阅。
+> 隐私政策和服务条款（`status-site/index/privacy.html`、`terms.html`）只是模板。使用前请按你自己的数据处理方式、服务商和适用法律请人审阅。
 
 ## 第三方资源
 

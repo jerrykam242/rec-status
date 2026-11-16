@@ -29,7 +29,7 @@ local function page(status, title, body_html)
         '</head><body><header class="cds--header live-header" data-theme="g100" aria-label="录播状态">',
         '<a class="cds--header__name live-header__name" href="/"><img class="live-header__mark" src="/assets/logo.svg?v=1" width="20" height="20" alt="">录播状态</a></header>',
         '<main class="live-main live-review"><h1 class="live-h2 live-review__title">', esc(title), '</h1>', body_html,
-        '</main><footer class="live-footer"><div class="live-footer__inner"><p><a class="cds--link live-footer__link" href="/privacy">隐私政策 / Privacy Policy</a></p><p>© 2026 Site operator</p></div></footer></body></html>')
+        '</main><footer class="live-footer"><div class="live-footer__inner"><p><a class="cds--link live-footer__link" href="/terms">服务条款 / Terms of Service</a><span class="live-footer__sep" aria-hidden="true">·</span><a class="cds--link live-footer__link" href="/privacy">隐私政策 / Privacy Policy</a></p><p>© 2026 Site operator</p></div></footer></body></html>')
     return ngx.exit(status)
 end
 

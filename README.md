@@ -13,7 +13,7 @@ a way for viewers to request recordings, and a sign-in gate in front of everythi
 
 | Component | What it does |
 |---|---|
-| **Status site** | A public page showing which rooms are live and being recorded, plus recent events. Visitors can request a recording through a form. Bilingual (zh/en) privacy policy and cookie notice, written for GDPR and PIPL. |
+| **Status site** | A public page showing which rooms are live and being recorded, plus recent events. Visitors can request a recording through a form. Bilingual (zh/en) terms of service, privacy policy and cookie notice, written for GDPR and PIPL. |
 | **Request flow** | The admin gets an email with signed approve/deny links. The visitor waits on the page for up to 5 minutes. If the request is approved in that time, the page shows the share link the worker created in OpenList. Otherwise the page says the request will be reviewed manually. |
 | **Edge gate** | OpenResty/Lua [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) checks in front of the OpenList sign-in, OpenList share links and the recorder WebUI. It also includes an IBM Carbon sign-in page and theme for the recorder. |
 | **Agent and worker** | Run on the recorder host. The agent pushes recorder state to the status site; the worker handles approved requests (copies files, creates the share, sends mail). Recordings are archived to whatever storage you mount in OpenList (`ARCHIVE_ROOT`): a cloud drive, S3, WebDAV, a NAS and so on. |
@@ -36,7 +36,7 @@ The pages are in Chinese; the screenshots use made-up demo data.
 
 ```
 status-site/          status site (OpenResty + Lua), served from /www/sites/live in the container
-  index/              static pages: index.html (status + request form), privacy.html, assets/
+  index/              static pages: index.html (status + request form), privacy.html, terms.html, assets/
   gate/               Lua: sign-in gate, ingest, status API, requests, review links, store
   proxy/ server/      nginx location and server blocks
   conf.d/             http-level shared dicts
@@ -98,8 +98,8 @@ Each component has its own notes:
 > root with mode 600; see `.gitignore`.
 
 > [!NOTE]
-> The privacy policy (`status-site/index/privacy.html`) is a template. Before you use it, have
-> it reviewed for your own processing, providers and jurisdiction.
+> The privacy policy and terms of service (`status-site/index/privacy.html`, `terms.html`) are
+> templates. Before you use them, have them reviewed for your own processing, providers and jurisdiction.
 
 ## Third-party assets
 

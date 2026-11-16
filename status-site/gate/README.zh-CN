@@ -12,6 +12,7 @@ rec-status · 状态站            English: README | 中文
   index/            静态根目录。
                     index.html = 状态页 + 申请表单（只对已登录会话开放）。
                     privacy.html = 公开的隐私政策（/privacy），无需验证码。
+                    terms.html = 公开的服务条款（/terms），无需验证码。
                     assets/ = Carbon CSS（carbon.css，用 tools/build-carbon-css.py 从 "Carbon"
                     设计系统 artifact 裁剪而来）、gate.css（登录页，与 rec.example.com 同款外观）、
                     live.css/live.js（状态页）、request.js（申请表单）、gate.js（登录）、
@@ -57,7 +58,7 @@ rec-status · 状态站            English: README | 中文
 访问控制（gate.lua）
 --------------------
   1. 只服务经 ESA 转发的请求（存在 edge_key 时校验边缘请求头）。
-  2. 无需会话即可访问：/__gate/*、/assets/*、/privacy、/favicon.ico、/robots.txt、
+  2. 无需会话即可访问：/__gate/*、/assets/*、/privacy、/terms、/favicon.ico、/robots.txt、
      /__ingest 和 /__agent/sync（agent 和 worker 的 HMAC 签名）、/__admin/review（签名链接）、
      /api/request/status（需要该申请的 ticket）。
   3. 通过 Turnstile 后获得一次性入场券（entry_ttl，60 秒）；访问 "/" 时消耗入场券并设置会话

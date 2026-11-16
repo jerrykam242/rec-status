@@ -4,7 +4,7 @@
 --    "/" burns it and sets the session, valid a fixed sess_ttl (10 min) from then.
 -- 3) Within that window "/" (reloads, new tabs) and the page's polling (/api/*) need no captcha;
 --    nothing extends it. Afterwards everything goes back to the sign-in page.
--- Sign-in page, its assets, the privacy policy, the agent's signed endpoints and the signed
+-- Sign-in page, its assets, the privacy policy and terms, the agent's signed endpoints and the signed
 -- review links are open.
 local L = package.loaded["live.common"] or dofile("/www/sites/live/gate/load.lua")
 
@@ -20,7 +20,7 @@ end
 local uri = ngx.var.uri or "/"
 if uri:sub(1, 8) == "/__gate/" or uri:sub(1, 8) == "/assets/"
     or uri == "/__ingest" or uri == "/__agent/sync" or uri == "/__admin/review"
-    or uri == "/favicon.ico" or uri == "/robots.txt" or uri == "/privacy" then
+    or uri == "/favicon.ico" or uri == "/robots.txt" or uri == "/privacy" or uri == "/terms" then
     -- /__agent/sync is HMAC-signed by the worker; /__admin/review links are HMAC-signed for the admin.
     return
 end

@@ -12,6 +12,7 @@ Files
   index/            static root.
                     index.html = the status page + request form (served only with a session).
                     privacy.html = public privacy policy (/privacy), no captcha.
+                    terms.html = public terms of service (/terms), no captcha.
                     assets/ = Carbon CSS (carbon.css, trimmed from the "Carbon" design-system
                     artifact with tools/build-carbon-css.py), gate.css (sign-in, same look as
                     rec.example.com), live.css/live.js (status page), request.js (request form),
@@ -61,7 +62,7 @@ Files
 Access control (gate.lua)
 -------------------------
   1. Only requests forwarded by ESA are served (edge header, when edge_key exists).
-  2. Open without a session: /__gate/*, /assets/*, /privacy, /favicon.ico, /robots.txt,
+  2. Open without a session: /__gate/*, /assets/*, /privacy, /terms, /favicon.ico, /robots.txt,
      /__ingest and /__agent/sync (HMAC-signed by the agent and worker), /__admin/review (HMAC-signed
      links), and /api/request/status (needs the request's ticket).
   3. Passing Turnstile gives a one-time entry pass (entry_ttl, 60 s); "/" burns it and sets the
