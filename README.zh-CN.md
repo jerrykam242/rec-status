@@ -1,6 +1,8 @@
-# rec-status
+<p align="center"><img src="docs/logo.svg" width="112" alt="rec-status 标志"></p>
 
-[English](README.md) · **简体中文**
+<h1 align="center">rec-status</h1>
+
+<p align="center"><a href="README.md">English</a> · <b>简体中文</b></p>
 
 一套小巧的自建方案，围绕直播录制工具录播姬（[BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder)）
 和文件服务器 [OpenList](https://github.com/OpenListTeam/OpenList) 搭建。
@@ -16,6 +18,18 @@
 | **Agent 和 worker** | 运行在录播机上。agent 把录播姬状态推送到状态站；worker 处理已批准的申请（复制文件、创建分享、发邮件）。 |
 
 所有页面使用 [IBM Carbon](https://carbondesignsystem.com/) 样式和 IBM Plex 字体。
+
+## 预览
+
+截图使用虚构的演示数据。
+
+| 状态页（浅色） | 状态页（深色） |
+|---|---|
+| ![状态页，浅色主题](docs/preview/status-light.png) | ![状态页，深色主题](docs/preview/status-dark.png) |
+| **录播申请表单** | **登录（Turnstile）** |
+| ![带日期日历的录播申请表单](docs/preview/request-dark.png) | ![登录页](docs/preview/signin.png) |
+
+<p align="center"><img src="docs/preview/status-mobile.png" width="280" alt="手机上的状态页"></p>
 
 ## 目录结构
 
@@ -35,6 +49,7 @@ edge-gate/            文件服务器和录播站的 Turnstile 网关（OpenRest
   tools/rec-theme-check/  录播姬升级后检查主题是否仍然适配
 ops/                  仅限 Cloudflare 的源站防火墙（nftables）、systemd 单元、logrotate
 tools/                build-carbon-css.py（裁剪 Carbon 编译后的 CSS）
+docs/                 仓库标志和 README 截图
 ```
 
 各组件的详细说明：
@@ -88,3 +103,9 @@ tools/                build-carbon-css.py（裁剪 Carbon 编译后的 CSS）
 - IBM Plex 字体：SIL Open Font License（`assets/fonts/IBM-Plex-OFL.txt`）。
 - `carbon.css`：裁剪自 `@carbon/styles`（Apache-2.0）。
 - 背景图和 Logo 均为占位图。
+
+## 致谢
+
+本项目围绕 [录播姬（BililiveRecorder）](https://github.com/BililiveRecorder/BililiveRecorder) 搭建，
+真正的录制工作都由录播姬完成；rec-status 只读取它的 REST API 和 Webhook，并在外部为它的 WebUI 换上主题。
+衷心感谢录播姬的开发者和所有贡献者。rec-status 是独立项目，与录播姬项目没有关联，也未获其背书。
