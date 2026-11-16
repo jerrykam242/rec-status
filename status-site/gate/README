@@ -1,0 +1,38 @@
+Live recorder status page (hand-made, 2026-11-13). Host: rec-status.example.com (folder name stays "live"), through Aliyun ESA.
+
+Host path /opt/1panel/www/sites/live  ==  /www/sites/live in the OpenResty container.
+
+  index/            static root. index.html = the status page (served only with a session),
+                    assets/ = Carbon CSS (carbon.css, trimmed from the "Carbon" design-system
+                    artifact with tools/build-carbon-css.py), gate.css (sign-in, same look as
+                    rec.example.com), live.css/live.js (status page), gate.js (ESA captcha),
+                    theme.js, IBM Plex fonts (OFL), logo.svg, bg.jpg (placeholder background).
+  gate/             Lua + template, not web-served:
+    live_config.lua   ESA captcha 身份标 (captcha_prefix) and 场景ID (captcha_scene), session TTL, asset_v.
+    gate.lua          rewrite phase, every request: ESA edge header; "/" only in exchange for a
+                      one-time live_entry pass (captcha on every visit); /api/* needs live_sess
+                      (browser-session, renewed by each poll, 10 min idle); /__gate/*, /assets/*,
+                      /__ingest open.
+    login.lua/.html   GET /__gate/login (Carbon sign-in with the ESA AI captcha).
+    verify.lua        POST /__gate/verify. ESA verifies the captcha on this URI before forwarding
+                      (ESA rule "需验签的接口" = rec-status.example.com/__gate/verify, POST, with
+                      拦截空 Token ON: without it ESA checks nothing); we then set the signed
+                      live_entry pass (60 s, single use). captcha_trust_esa in live_config.lua.
+    logout.lua        /__gate/logout.
+    ingest.lua        POST /__ingest from the agent on the recorder host (HMAC-SHA1 with
+                      ingest_key over "ts.body", +-300 s, never older than the last one).
+    status.lua        GET /api/status -> {serverTime, receivedAt, data}.
+    cookie_key        root 600, random; rotate to end all open sessions.
+    ingest_key        root 600; same value as PUSH_KEY in /etc/rec-status/agent.env on the
+                      recorder host (203.0.113.10).
+    edge_key          root 600; ESA must add request header "X-Live-Edge: <edge_key>" to
+                      origin requests (ESA rule). Without this file the edge check is off.
+  proxy/live.conf   locations + rewrite_by_lua (included by the server block).
+  log/              access.log, error.log.
+/opt/1panel/www/conf.d/rec-status.example.com.conf   server block (uses the *.example.com cert of site e5).
+/opt/1panel/www/conf.d/00-live.conf          lua_shared_dict live_status (latest snapshot, in memory;
+                                             the agent re-sends at least every 60 s).
+
+Reload: docker exec 1Panel-openresty-XXXX openresty -t && docker exec 1Panel-openresty-XXXX openresty -s reload
+Bump asset_v in live_config.lua and ?v= in index/index.html after editing assets.
+Source of truth: this repository (status-site/).

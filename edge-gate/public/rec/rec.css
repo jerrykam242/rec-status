@@ -1,0 +1,220 @@
+/* rec.example.com sign-in, on IBM Carbon (carbon.css: Carbon's own compiled styles,
+   trimmed to this page, with the White theme and a Gray 100 header).
+   Type is IBM Plex Sans; the fields use IBM Plex Mono so l / 1 / I and O / 0 differ.
+   Both are OFL (fonts/IBM-Plex-OFL.txt). */
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 300; font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-300-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); }
+
+
+/* Larger than Carbon's defaults so the form is easy to read and tap:
+   16px body text, 14px labels, 56px fields and button, a 20px checkbox. */
+html { color-scheme: light; }
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  background: var(--cds-background, #fff);
+  color: var(--cds-text-primary, #161616);
+}
+
+/* Header: Carbon UI shell, Gray 100. */
+.rec-header__name { gap: var(--cds-spacing-03, .5rem); font-size: 1rem; }
+.rec-header__mark { flex: none; display: block; width: 24px; height: 24px; }
+
+/* Page: one centred column. On wider screens the form sits on a white card on Gray 10. */
+.rec-main {
+  flex: 1 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: calc(3rem + var(--cds-spacing-07, 2rem)) var(--cds-spacing-05, 1rem) var(--cds-spacing-09, 3rem);
+}
+.rec-panel { width: 100%; max-width: 30rem; }
+
+.rec-panel__mark { display: block; width: 48px; height: 48px; margin: 0 auto var(--cds-spacing-05, 1rem); }
+/* heading-05 */
+.rec-heading {
+  font-size: 2rem; line-height: 1.25; font-weight: 400; letter-spacing: 0; text-align: center;
+  color: var(--cds-text-primary, #161616);
+}
+/* body-02 */
+.rec-lede {
+  margin: var(--cds-spacing-03, .5rem) 0 var(--cds-spacing-07, 2rem);
+  font-size: 1rem; line-height: 1.5; letter-spacing: 0; text-align: center;
+  color: var(--cds-text-secondary, #525252);
+}
+
+.rec-notification { max-inline-size: none; min-inline-size: 0; margin: 0 0 var(--cds-spacing-06, 1.5rem); }
+.rec-notification .cds--inline-notification__title,
+.rec-notification .cds--inline-notification__subtitle { font-size: 1rem; line-height: 1.5; letter-spacing: 0; }
+
+.rec-form {
+  /* Carbon reads these to size fields, the password toggle, the error icon and the button. */
+  --cds-layout-size-height-lg: 3.5rem;
+  --cds-layout-size-height: 3.5rem;
+  display: flex; flex-direction: column; gap: var(--cds-spacing-07, 2rem);
+}
+.rec-form .cds--label {
+  font-size: .875rem; line-height: 1.25rem; letter-spacing: .16px; font-weight: 600;
+  color: var(--cds-text-primary, #161616);
+}
+.rec-form .cds--text-input {
+  font-family: "IBM Plex Mono", Menlo, "DejaVu Sans Mono", Courier, monospace;
+  font-size: 1rem; letter-spacing: 0;
+  font-variant-ligatures: none;
+}
+.rec-form .cds--text-input__invalid-icon { inline-size: 20px; block-size: 20px; }
+.rec-form .cds--form-requirement { font-size: .875rem; line-height: 1.25rem; letter-spacing: .16px; }
+
+/* Security check: Turnstile's flexible widget fills the column; reserve its height. */
+.rec-turnstile { align-self: stretch; min-height: 65px; }  /* .cds--form-item is a flex column that would shrink it to 300px */
+.rec-security .cds--label { display: block; }
+/* Carbon only opens .cds--form-requirement next to an invalid input; open it here too. */
+.rec-security--invalid .rec-turnstile { outline: 2px solid var(--cds-support-error, #da1e28); }
+.rec-security--invalid .cds--form-requirement {
+  display: block; overflow: visible; max-block-size: 12.5rem; margin-top: var(--cds-spacing-03, .5rem);
+  color: var(--cds-text-error, #da1e28);
+}
+
+/* Checkbox: 20px box, 16px label, the whole row is the tap target. */
+.rec-form .cds--checkbox-label {
+  font-size: 1rem; line-height: 1.5rem; letter-spacing: 0;
+  min-block-size: 2.75rem; align-items: center;
+  padding-block-start: 0; padding-inline-start: 1.5rem;
+}
+.rec-form .cds--checkbox-label::before {
+  inline-size: 1.25rem; block-size: 1.25rem; margin: 0;
+  inset-block-start: calc(50% - .625rem); inset-inline-start: .125rem;
+}
+.rec-form .cds--checkbox-label::after {
+  inline-size: .6875rem; block-size: .375rem; margin: 0;
+  border-block-end-width: 2px; border-inline-start-width: 2px;
+  inset-block-start: calc(50% - .5rem); inset-inline-start: .5625rem;
+}
+.rec-form .cds--checkbox-label-text { padding-inline-start: .75rem; }
+
+.rec-form .rec-submit {
+  width: 100%; max-inline-size: none; min-block-size: 3.5rem; padding-block: 0;
+  font-size: 1rem; line-height: 1.5; letter-spacing: 0;
+  align-items: center;
+}
+.rec-form .rec-submit .cds--btn__icon { inline-size: 20px; block-size: 20px; }
+
+/* helper-text-02, centred; sits at the bottom of the sign-in panel */
+.rec-footer {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: var(--cds-spacing-02, .25rem) var(--cds-spacing-06, 1.5rem);
+  margin-top: var(--cds-spacing-07, 2rem);
+  padding-top: var(--cds-spacing-05, 1rem);
+  border-top: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  font-size: .875rem; line-height: 1.25rem; letter-spacing: .16px; text-align: center;
+  color: var(--cds-text-helper, #6f6f6f);
+}
+
+@media (min-width: 42rem) {
+  body { background: var(--cds-layer-01, #f4f4f4); }
+  a.cds--header__name.rec-header__name { padding-inline-start: calc(var(--cds-spacing-07, 2rem) - .125rem); }
+  .rec-main { padding: calc(3rem + var(--cds-spacing-09, 3rem)) var(--cds-spacing-07, 2rem) var(--cds-spacing-10, 4rem); }
+  .rec-panel {
+    padding: var(--cds-spacing-08, 2.5rem) var(--cds-spacing-08, 2.5rem) var(--cds-spacing-09, 3rem);
+    background: var(--cds-background, #fff);
+    border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
+  }
+  .rec-heading { font-size: 2.25rem; line-height: 1.22; }
+  .rec-footer { border-top-color: var(--cds-border-subtle-01, #c6c6c6); }
+}
+
+/* Carbon sizes every <p>; let the footer's own size apply. */
+.rec-footer p { margin: 0; font: inherit; letter-spacing: inherit; }
+
+/* Desktop: the photo (bg.jpg) is shown whole on the left, a blurred copy
+   fills the rest, and the sign-in floats on the right as a frosted-glass box.
+   The photo credit is a small label in the bottom-left corner.
+   Phones and tablets keep the card, without the photo. */
+.rec-credit { display: none; }
+@media (min-width: 66rem) {
+  body { background: #393939; }
+  /* Back layer: the same photo, covering, blurred and dimmed, fills whatever the sharp one leaves. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 3rem 0 0 0;
+    z-index: -1;
+    background: #393939 url("bg.jpg?v=2") center / cover no-repeat;
+    filter: blur(40px) brightness(.8);
+  }
+  /* Front layer: the photo at 110% of the area's height (the bottom tenth is cropped, the ears
+     stay in frame), nudged left by 5% of its width; its right edge fades into the back layer.
+     The subject (centre of the photo) clears the box on common desktop sizes (1280 x 800 and up). */
+  body::after {
+    --rec-photo-h: calc((100vh - 3rem) * 1.1);
+    --rec-photo-w: calc(var(--rec-photo-h) * 1.5);  /* photo is 2000 x 1333 */
+    --rec-photo-at: calc(var(--rec-photo-w) * -.05) top;
+    content: "";
+    position: fixed;
+    inset: 3rem 0 0 0;
+    z-index: -1;
+    background: url("bg.jpg?v=2") var(--rec-photo-at) / var(--rec-photo-w) var(--rec-photo-h) no-repeat;
+    -webkit-mask: linear-gradient(to left, transparent, #000 8rem) var(--rec-photo-at) / var(--rec-photo-w) var(--rec-photo-h) no-repeat;
+    mask: linear-gradient(to left, transparent, #000 8rem) var(--rec-photo-at) / var(--rec-photo-w) var(--rec-photo-h) no-repeat;
+  }
+  .rec-main {
+    justify-content: flex-end;
+    align-items: center;
+    padding: calc(3rem + var(--cds-spacing-06, 1.5rem)) var(--cds-spacing-10, 4rem) var(--cds-spacing-06, 1.5rem);
+  }
+  /* Blurred glass: a thin, lightly tinted pane that blurs the photo behind it, with a bright
+     rim and an inner top highlight. Browsers without backdrop-filter get a solid pane. */
+  .rec-panel {
+    width: 26rem; max-width: none;
+    padding: var(--cds-spacing-08, 2.5rem) var(--cds-spacing-08, 2.5rem) var(--cds-spacing-06, 1.5rem);
+    background: rgba(255, 255, 255, .9);
+    border: 1px solid rgba(255, 255, 255, .5);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .7);
+  }
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .rec-panel {
+      background: linear-gradient(135deg, rgba(255, 255, 255, .62) 0%, rgba(255, 255, 255, .38) 100%);
+      -webkit-backdrop-filter: blur(32px) saturate(1.6);
+      backdrop-filter: blur(32px) saturate(1.6);
+    }
+  }
+  .rec-panel__mark { width: 40px; height: 40px; }
+  .rec-heading { font-size: 2rem; line-height: 1.25; }
+  .rec-lede { margin-bottom: var(--cds-spacing-06, 1.5rem); color: #262626; }
+  .rec-form { --cds-layout-size-height-lg: 3rem; --cds-layout-size-height: 3rem; gap: var(--cds-spacing-06, 1.5rem); }
+  /* Fields stay nearly opaque so typing is easy to read over the blur. */
+  .rec-form .cds--text-input { background-color: rgba(255, 255, 255, .85); }
+  .rec-form .rec-submit { min-block-size: 3rem; }
+  .rec-form .cds--checkbox-label { min-block-size: 2.25rem; }
+
+  .rec-footer { margin-top: var(--cds-spacing-06, 1.5rem); border-top-color: rgba(22, 22, 22, .15); color: #393939; }
+
+  .rec-credit {
+    display: block;
+    left: var(--cds-spacing-05, 1rem);
+    position: fixed;
+    bottom: var(--cds-spacing-05, 1rem);
+    margin: 0;
+    padding: .25rem .5rem;
+    border: 0;
+    background: rgba(22, 22, 22, .6);
+    color: #f4f4f4;
+    font-size: .75rem; line-height: 1rem; letter-spacing: .32px;
+  }
+}
+/* Short desktop screens (e.g. 1280 x 800): drop the small logo and tighten so the box fits. */
+@media (min-width: 66rem) and (max-height: 56rem) {
+  .rec-panel__mark { display: none; }
+  .rec-panel { padding-top: var(--cds-spacing-07, 2rem); }
+  .rec-lede { margin-bottom: var(--cds-spacing-05, 1rem); }
+}
+.rec-footer__link { color: inherit; text-decoration: underline; }

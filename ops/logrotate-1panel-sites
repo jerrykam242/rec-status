@@ -1,0 +1,14 @@
+# Web server logs of the 1Panel sites (visitor IPs): keep 14 days (privacy policy,
+# https://rec-status.example.com/privacy). Added 2026-11-16 at the owner's request. copytruncate:
+# OpenResty in the container keeps writing to the same file.
+/opt/1panel/www/sites/*/log/*.log {
+    daily
+    rotate 14
+    maxage 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su root root
+}

@@ -1,0 +1,8 @@
+[Unit]
+Description=Check rec.example.com Carbon theme against the recorder WebUI
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/1panel/www/common/turnstile/tools/rec-theme-check/rec-theme-check.sh

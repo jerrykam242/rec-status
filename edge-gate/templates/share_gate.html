@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>打开录播分享 – file.example.com</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#161616">
+  <link rel="preload" href="/__turnstile/rec/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="/__turnstile/rec/logo.svg?v={{V}}" type="image/svg+xml">
+  <link rel="stylesheet" href="/__turnstile/rec/carbon.css?v={{V}}">
+  <link rel="stylesheet" href="/__turnstile/rec/rec.css?v={{V}}">
+  <link rel="stylesheet" href="/__turnstile/share.css?v={{V}}">
+</head>
+<body>
+  <a class="cds--skip-to-content" href="#main-content">跳到主要内容</a>
+
+  <header class="cds--header rec-header" data-theme="g100" aria-label="录播状态">
+    <a class="cds--header__name rec-header__name" href="https://rec-status.example.com/">
+      <img class="rec-header__mark" src="/__turnstile/rec/logo.svg?v={{V}}" width="20" height="20" alt="">
+      录播状态
+    </a>
+  </header>
+
+  <main class="rec-main" id="main-content">
+    <div class="rec-panel">
+      <img class="rec-panel__mark" src="/__turnstile/rec/logo.svg?v={{V}}" width="48" height="48" alt="">
+      <h1 class="rec-heading">打开录播分享</h1>
+      <p class="rec-lede">正在进行安全验证，通过后将自动打开分享页面。</p>
+{{ERROR}}
+      <form class="rec-form" id="share-form" method="post" action="/__turnstile/share" novalidate>
+        <input type="hidden" name="r" value="{{R}}">
+        <div class="cds--form-item rec-security" id="security-check">
+          <p class="cds--label" id="security-check-label">安全验证</p>
+          <div class="cf-turnstile rec-turnstile" data-sitekey="{{SITEKEY}}" data-size="flexible" data-action="openlist-share" data-theme="light" data-language="zh-cn" data-callback="shareGateDone" data-response-field-name="cf-turnstile-response"></div>
+          <noscript><p class="cds--form__helper-text">请启用 JavaScript 以完成人机验证。</p></noscript>
+        </div>
+        <button type="submit" class="cds--btn cds--btn--primary cds--layout--size-lg rec-submit">
+          打开分享
+          <svg class="cds--btn__icon" focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><polygon points="18 6 16.57 7.393 24.15 15 4 15 4 17 24.15 17 16.57 24.573 18 26 28 16 18 6"/></svg>
+        </button>
+      </form>
+
+      <footer class="rec-footer">
+        <p><a class="cds--link rec-share-link" href="https://rec-status.example.com/privacy">隐私政策 / Privacy Policy</a></p>
+      </footer>
+    </div>
+  </main>
+
+  <script src="/__turnstile/share.js?v={{V}}"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</body>
+</html>

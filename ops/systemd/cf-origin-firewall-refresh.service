@@ -1,0 +1,6 @@
+[Unit]
+Description=Refresh Cloudflare IP ranges for cf_origin
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cf-origin-firewall.sh

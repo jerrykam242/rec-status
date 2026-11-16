@@ -1,0 +1,13 @@
+[Unit]
+Description=Allow ports 80/443 only from Cloudflare (nftables table inet cf_origin)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/cf-origin-firewall.sh
+ExecStop=/usr/local/sbin/cf-origin-firewall.sh off
+
+[Install]
+WantedBy=multi-user.target

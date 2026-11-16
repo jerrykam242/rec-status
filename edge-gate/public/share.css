@@ -1,0 +1,4 @@
+/* Share-link check page: small additions to rec.css. */
+.rec-share-error { max-inline-size: none; margin: 0 0 1rem; }
+.rec-share-link.cds--link { font-size: inherit; line-height: inherit; }
+.rec-share-link.cds--link { color: var(--cds-link-primary, #0f62fe); text-decoration: underline; }

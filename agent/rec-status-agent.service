@@ -1,0 +1,29 @@
+[Unit]
+Description=rec-status agent (publishes BililiveRecorder state to the public status page)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=recstatus
+Group=recstatus
+EnvironmentFile=/etc/rec-status/agent.env
+ExecStart=/usr/bin/python3 -I /opt/rec-status/rec-status-agent.py
+StateDirectory=rec-status
+Restart=always
+RestartSec=5
+# Hardening: the agent only needs the network and its state directory.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

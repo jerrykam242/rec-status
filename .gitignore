@@ -1,0 +1,16 @@
+# Secrets live only on the servers (root 600)
+**/cookie_key
+**/ingest_key
+**/edge_key
+**/rs_key
+**/secret
+**/rec_auth
+*.env
+!*.env.example
+# Runtime data and logs
+status-site/data/
+**/log/
+*.log
+__pycache__/
+*.pyc
+*.bak*

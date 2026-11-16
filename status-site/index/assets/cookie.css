@@ -1,0 +1,20 @@
+/* Cookie notice (cookie.js): Carbon inverse "toast" look, bottom of the screen. */
+.live-cookie {
+  position: fixed; z-index: 9000; left: 0; right: 0; bottom: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem;
+  padding: 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  background: var(--cds-background-inverse, #393939); color: var(--cds-text-inverse, #fff);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+  font-size: .875rem; line-height: 1.25rem; letter-spacing: .16px;
+}
+.live-cookie__text { flex: 1 1 18rem; margin: 0; }
+.live-cookie__link { margin-left: .25rem; color: var(--cds-link-inverse, #78a9ff); text-decoration: underline; }
+.live-cookie__link:focus-visible, .live-cookie__btn:focus-visible { outline: 2px solid var(--cds-focus-inverse, #fff); outline-offset: 1px; }
+.live-cookie__btn {
+  flex: 0 0 auto; min-height: 2.5rem; padding: 0 1rem; border: 0; cursor: pointer;
+  background: var(--cds-button-primary, #0f62fe); color: #fff; font: inherit;
+}
+.live-cookie__btn:hover { background: var(--cds-button-primary-hover, #0050e6); }
+@media (min-width: 42rem) {
+  .live-cookie { left: auto; right: 1rem; bottom: 1rem; max-width: 30rem; flex-wrap: nowrap; padding-bottom: 1rem; }
+}

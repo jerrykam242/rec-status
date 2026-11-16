@@ -1,0 +1,29 @@
+[Unit]
+Description=rec-status request worker (recording requests: admin email, GDrive copy, OpenList share)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=recstatus
+Group=recstatus
+EnvironmentFile=/etc/rec-status/request-worker.env
+ExecStart=/usr/bin/python3 -I /opt/rec-status/rec-request-worker.py
+StateDirectory=rec-status
+Restart=always
+RestartSec=30
+# Hardening: needs only the network and its state directory.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

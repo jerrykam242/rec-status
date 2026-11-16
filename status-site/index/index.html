@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>录制状态 – 录播状态</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#161616">
+  <script src="/assets/theme.js?v=1"></script>
+  <link rel="preload" href="/assets/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="/assets/logo.svg?v=1" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/carbon.css?v=4">
+  <link rel="stylesheet" href="/assets/live.css?v=9">
+  <link rel="stylesheet" href="/assets/cookie.css?v=2">
+</head>
+<body>
+  <a class="cds--skip-to-content" href="#main-content">跳到主要内容</a>
+
+  <header class="cds--header live-header" data-theme="g100" aria-label="录播状态">
+    <a class="cds--header__name live-header__name" href="/">
+      <img class="live-header__mark" src="/assets/logo.svg?v=1" width="20" height="20" alt="">
+      录播状态
+    </a>
+    <div class="cds--header__global">
+      <button type="button" class="cds--header__action live-theme" id="theme-toggle" aria-label="切换至浅色主题" title="切换至浅色主题">
+        <svg class="live-theme__light" focusable="false" aria-hidden="true" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><rect x="15" y="2" width="2" height="5"/><rect x="21.6675" y="6.8536" width="4.958" height="1.9998" transform="translate(1.5191 19.3744) rotate(-45)"/><rect x="25" y="15" width="5" height="2"/><rect x="23.1466" y="21.6675" width="1.9998" height="4.958" transform="translate(-10.0018 24.1465) rotate(-45)"/><rect x="15" y="25" width="2" height="5"/><rect x="5.3745" y="23.1466" width="4.958" height="1.9998" transform="translate(-14.7739 12.6256) rotate(-45)"/><rect x="2" y="15" width="5" height="2"/><rect x="6.8536" y="5.3745" width="1.9998" height="4.958" transform="translate(-3.253 7.8535) rotate(-45)"/><path d="M16,12a4,4,0,1,1-4,4,4.0045,4.0045,0,0,1,4-4m0-2a6,6,0,1,0,6,6,6,6,0,0,0-6-6Z"/></svg>
+        <svg class="live-theme__dark" focusable="false" aria-hidden="true" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M13.5025,5.4136A15.0755,15.0755,0,0,0,25.096,23.6082a11.1134,11.1134,0,0,1-7.9749,3.3893c-.1385,0-.2782.0051-.4178,0A11.0944,11.0944,0,0,1,13.5025,5.4136M14.98,3a1.0024,1.0024,0,0,0-.1746.0156A13.0959,13.0959,0,0,0,16.63,28.9973c.1641.006.3282,0,.4909,0a13.0724,13.0724,0,0,0,10.702-5.5556,1.0094,1.0094,0,0,0-.7833-1.5644A13.08,13.08,0,0,1,15.8892,4.38,1.0149,1.0149,0,0,0,14.98,3Z"/></svg>
+      </button>
+      <a class="cds--header__action live-signout" href="/__gate/logout" aria-label="退出登录" title="退出登录">
+        <svg focusable="false" aria-hidden="true" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M6,30H18a2.0023,2.0023,0,0,0,2-2V25H18v3H6V4H18V7h2V4a2.0023,2.0023,0,0,0-2-2H6A2.0023,2.0023,0,0,0,4,4V28A2.0023,2.0023,0,0,0,6,30Z"/><polygon points="20.586 20.586 24.172 17 10 17 10 15 24.172 15 20.586 11.414 22 10 28 16 22 22 20.586 20.586"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <nav class="live-nav" aria-label="页面导航">
+    <ul class="live-nav__list">
+      <li><a class="live-nav__link" href="#status" aria-current="location">录制状态</a></li>
+      <li><a class="live-nav__link" href="#recent">近期事件</a></li>
+      <li><a class="live-nav__link" href="#request">录播请求</a></li>
+    </ul>
+  </nav>
+
+  <main class="live-main" id="main-content">
+    <section class="live-hero live-anchor" id="status" aria-labelledby="headline">
+      <p class="live-eyebrow"><span class="live-dot" id="hero-dot" aria-hidden="true"></span><span id="eyebrow">录制状态</span></p>
+      <h1 class="live-headline" id="headline"><span class="cds--skeleton__text live-skel-headline"></span></h1>
+      <p class="live-sub" id="subline"></p>
+    </section>
+
+    <div id="notice" aria-live="polite"></div>
+
+    <section class="live-section" aria-labelledby="rooms-heading">
+      <div class="live-section__head">
+        <h2 class="live-h2" id="rooms-heading">直播间</h2>
+        <p class="live-section__meta" id="rooms-meta"></p>
+      </div>
+      <ul class="live-grid" id="rooms" aria-busy="true">
+        <li class="cds--tile live-room"><span class="cds--skeleton__text live-skel-tag"></span><span class="cds--skeleton__heading"></span><span class="cds--skeleton__text"></span><span class="cds--skeleton__text live-skel-short"></span></li>
+        <li class="cds--tile live-room"><span class="cds--skeleton__text live-skel-tag"></span><span class="cds--skeleton__heading"></span><span class="cds--skeleton__text"></span><span class="cds--skeleton__text live-skel-short"></span></li>
+        <li class="cds--tile live-room"><span class="cds--skeleton__text live-skel-tag"></span><span class="cds--skeleton__heading"></span><span class="cds--skeleton__text"></span><span class="cds--skeleton__text live-skel-short"></span></li>
+      </ul>
+    </section>
+
+    <section class="live-section live-anchor" id="recent" aria-labelledby="events-heading">
+      <div class="cds--data-table-container live-events">
+        <div class="cds--data-table-header">
+          <h2 class="cds--data-table-header__title live-h2" id="events-heading">近期事件</h2>
+          <p class="cds--data-table-header__description">开播、下播及录制起止记录</p>
+        </div>
+        <div class="cds--data-table-content">
+          <table class="cds--data-table cds--data-table--lg" aria-labelledby="events-heading">
+            <thead>
+              <tr>
+                <th scope="col"><div class="cds--table-header-label">时间</div></th>
+                <th scope="col"><div class="cds--table-header-label">直播间</div></th>
+                <th scope="col"><div class="cds--table-header-label">事件</div></th>
+                <th scope="col" class="live-col-detail"><div class="cds--table-header-label">说明</div></th>
+              </tr>
+            </thead>
+            <tbody id="events">
+              <tr><td colspan="4"><span class="cds--skeleton__text"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="live-section live-request live-anchor" id="request" aria-labelledby="request-heading">
+      <div class="live-section__head">
+        <h2 class="live-h2" id="request-heading">录播请求</h2>
+      </div>
+      <p class="live-request__lede">如需某一天的直播录像，请填写下方表格。提交后请在页面上稍候：如果申请在 5 分钟内获批，下载链接会直接显示在页面上；否则申请转为人工审核，我们会通过你留下的联系方式与你联系。</p>
+
+      <div class="cds--tile live-request__tile">
+        <div id="rq-result" aria-live="polite"></div>
+        <div class="live-wait" id="rq-wait" aria-live="polite" hidden></div>
+        <form class="live-request__form" id="rq-form" novalidate>
+          <div class="cds--form-item cds--text-input-wrapper live-request__wide live-request__half" data-field="name">
+            <label class="cds--label" for="rq-name">称呼</label>
+            <div class="cds--text-input__field-outer-wrapper">
+              <div class="cds--text-input__field-wrapper">
+                <input class="cds--text-input cds--text-input--lg" id="rq-name" name="name" type="text" maxlength="40" autocomplete="nickname" required>
+                <svg class="cds--text-input__invalid-icon" focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8,1C4.2,1,1,4.2,1,8s3.2,7,7,7s7-3.1,7-7S11.9,1,8,1z M7.5,4h1v5h-1V4z M8,12.2c-0.4,0-0.8-0.4-0.8-0.8s0.3-0.8,0.8-0.8c0.4,0,0.8,0.4,0.8,0.8S8.4,12.2,8,12.2z"/></svg>
+              </div>
+            </div>
+            <div class="cds--form__helper-text" id="rq-name-helper">最多 40 个字符。</div>
+            <div class="cds--form-requirement" id="rq-name-error"></div>
+          </div>
+          <div class="cds--form-item live-request__wide live-request__half" data-field="room">
+            <div class="cds--select">
+              <label class="cds--label" for="rq-room">直播间</label>
+              <div class="cds--select-input__wrapper">
+                <select class="cds--select-input cds--select-input--lg" id="rq-room" name="room" disabled required><option value="">正在加载…</option></select>
+                <svg class="cds--select__arrow" focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 11L3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"/></svg>
+              </div>
+              <div class="cds--form__helper-text" id="rq-room-helper">仅列出存有录像的直播间。</div>
+              <div class="cds--form-requirement" id="rq-room-error"></div>
+            </div>
+          </div>
+          <div class="cds--form-item live-request__wide" data-field="date">
+            <span class="cds--label" id="rq-date-label">日期</span>
+            <input type="hidden" id="rq-date" name="date">
+            <div class="live-cal" id="rq-cal" role="group" aria-labelledby="rq-date-label" aria-describedby="rq-date-helper" data-empty>
+              <div class="live-cal__head">
+                <button type="button" class="live-cal__nav" id="rq-cal-prev" aria-label="上一个有录像的月份" disabled><svg focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><polygon points="10 16 20 6 21.4 7.4 12.8 16 21.4 24.6 20 26 10 16"/></svg></button>
+                <div class="cds--select live-cal__month">
+                  <div class="cds--select-input__wrapper">
+                    <select class="cds--select-input cds--select-input--sm" id="rq-cal-month" aria-label="月份" disabled><option value="">请先选择直播间</option></select>
+                    <svg class="cds--select__arrow" focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 11L3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"/></svg>
+                  </div>
+                </div>
+                <button type="button" class="live-cal__nav" id="rq-cal-next" aria-label="下一个有录像的月份" disabled><svg focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><polygon points="22 16 12 26 10.6 24.6 19.2 16 10.6 7.4 12 6 22 16"/></svg></button>
+              </div>
+              <table class="live-cal__grid" role="grid" aria-labelledby="rq-date-label">
+                <thead><tr><th scope="col" abbr="星期一">一</th><th scope="col" abbr="星期二">二</th><th scope="col" abbr="星期三">三</th><th scope="col" abbr="星期四">四</th><th scope="col" abbr="星期五">五</th><th scope="col" abbr="星期六">六</th><th scope="col" abbr="星期日">日</th></tr></thead>
+                <tbody id="rq-cal-body"></tbody>
+              </table>
+            </div>
+            <p class="live-cal__picked" id="rq-date-picked" aria-live="polite"></p>
+            <div class="cds--form__helper-text" id="rq-date-helper">先选择直播间，再点选有录像的日期（蓝色）。录像按北京时间日期归档，当天的录像次日起可申请。</div>
+            <div class="cds--form-requirement" id="rq-date-error"></div>
+          </div>
+          <div class="cds--form-item" data-field="ctype">
+            <div class="cds--select">
+              <label class="cds--label" for="rq-ctype">联系方式类型</label>
+              <div class="cds--select-input__wrapper">
+                <select class="cds--select-input cds--select-input--lg" id="rq-ctype" name="ctype" required><option value="qq">QQ</option><option value="email">邮箱</option><option value="other">其他</option></select>
+                <svg class="cds--select__arrow" focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 11L3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"/></svg>
+              </div>
+              <div class="cds--form__helper-text" id="rq-ctype-helper"></div>
+              <div class="cds--form-requirement" id="rq-ctype-error"></div>
+            </div>
+          </div>
+          <div class="cds--form-item cds--text-input-wrapper" data-field="contact">
+            <label class="cds--label" for="rq-contact">联系方式</label>
+            <div class="cds--text-input__field-outer-wrapper">
+              <div class="cds--text-input__field-wrapper">
+                <input class="cds--text-input cds--text-input--lg" id="rq-contact" name="contact" type="text" maxlength="100" autocomplete="off" required>
+                <svg class="cds--text-input__invalid-icon" focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8,1C4.2,1,1,4.2,1,8s3.2,7,7,7s7-3.1,7-7S11.9,1,8,1z M7.5,4h1v5h-1V4z M8,12.2c-0.4,0-0.8-0.4-0.8-0.8s0.3-0.8,0.8-0.8c0.4,0,0.8,0.4,0.8,0.8S8.4,12.2,8,12.2z"/></svg>
+              </div>
+            </div>
+            <div class="cds--form__helper-text" id="rq-contact-helper">请填写 QQ 号码。</div>
+            <div class="cds--form-requirement" id="rq-contact-error"></div>
+          </div>
+          <div class="cds--form-item live-request__wide" data-field="note">
+            <label class="cds--label" for="rq-note">备注（选填）</label>
+            <div class="cds--text-area__wrapper">
+              <textarea class="cds--text-area" id="rq-note" name="note" rows="3" maxlength="200"></textarea>
+            </div>
+            <div class="cds--form__helper-text">最多 200 个字符。</div>
+          </div>
+          <section class="live-request__wide live-privacy" aria-labelledby="rq-privacy-heading">
+            <h3 class="live-privacy__title" id="rq-privacy-heading">隐私与数据保护</h3>
+            <p class="live-privacy__more">您提交的信息仅用于处理本次请求，并将于请求处理完毕后 30 天内删除。如需访问、更正或删除您的数据，请联系 <a class="cds--link" href="mailto:admin@example.com">admin@example.com</a>。详见<a class="cds--link" href="/privacy#zh" target="_blank" rel="noopener">隐私政策</a>。</p>
+            <h3 class="live-privacy__title live-privacy__title--en" lang="en">Privacy and data protection</h3>
+            <p class="live-privacy__more" lang="en">Your information is used solely to process this request and will be deleted within 30 days after the request is concluded. To access, correct or delete your data, please contact <a class="cds--link" href="mailto:admin@example.com">admin@example.com</a>. See our <a class="cds--link" href="/privacy#en" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+          </section>
+          <div class="cds--form-item live-request__wide" data-field="consent">
+            <div class="cds--checkbox-wrapper">
+              <input type="checkbox" class="cds--checkbox" id="rq-consent" name="consent" required>
+              <label for="rq-consent" class="cds--checkbox-label"><span class="cds--checkbox-label-text">我已阅读并同意《隐私政策》，同意为处理本次录播请求而处理上述个人信息。<span class="live-privacy__en" lang="en">I have read and agree to the Privacy Policy, and consent to the processing of the above personal information for this recording request.</span></span></label>
+            </div>
+            <div class="cds--form-requirement" id="rq-consent-error"></div>
+          </div>
+          <div class="cds--form-item live-request__wide" data-field="transfer">
+            <div class="cds--checkbox-wrapper">
+              <input type="checkbox" class="cds--checkbox" id="rq-transfer" name="transfer" required>
+              <label for="rq-transfer" class="cds--checkbox-label"><span class="cds--checkbox-label-text">我单独同意将上述个人信息提供至中华人民共和国境外，以及欧洲经济区和英国以外的国家或地区，用于处理本次录播请求（境外接收方、处理目的、方式、种类及行使权利的方式见《隐私政策》第五条）。<span class="live-privacy__en" lang="en">I separately consent to the transfer of the above personal information outside the People’s Republic of China and to countries outside the European Economic Area and the United Kingdom for this recording request (recipients, purposes, methods, categories and how to exercise my rights are set out in section 5 of the Privacy Policy).</span></span></label>
+            </div>
+            <div class="cds--form-requirement" id="rq-transfer-error"></div>
+          </div>
+          <div class="live-request__wide live-request__actions">
+            <button type="submit" class="cds--btn cds--btn--primary" id="rq-submit">提交请求</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="live-footer">
+    <div class="live-footer__inner">
+      <p id="updated">正在连接</p>
+      <p><a class="cds--link live-footer__link" href="/privacy">隐私政策 / Privacy Policy</a><span class="live-footer__sep" aria-hidden="true">·</span>© 2026 Site operator</p>
+    </div>
+  </footer>
+
+  <!-- Templates (cloned by live.js; textContent only, never innerHTML with data). -->
+  <template id="tpl-room">
+    <li class="cds--tile live-room">
+      <div class="live-room__tags"></div>
+      <h3 class="live-room__name"></h3>
+      <p class="live-room__title"></p>
+      <dl class="live-room__stats" hidden>
+        <div><dt>录制时长</dt><dd class="live-mono" data-k="elapsed"></dd></div>
+        <div><dt>文件大小</dt><dd class="live-mono" data-k="bytes"></dd></div>
+        <div><dt>下载速率</dt><dd class="live-mono" data-k="mbps"></dd></div>
+      </dl>
+      <p class="live-room__note"></p>
+      <a class="cds--link live-room__link" target="_blank" rel="noopener noreferrer">
+        <span></span>
+        <svg focusable="false" aria-hidden="true" width="16" height="16" viewBox="0 0 32 32" fill="currentColor"><path d="M26,28H6a2.0027,2.0027,0,0,1-2-2V6A2.0027,2.0027,0,0,1,6,4H16V6H6V26H26V16h2V26A2.0027,2.0027,0,0,1,26,28Z"/><polygon points="20 2 20 4 26.586 4 18 12.586 19.414 14 28 5.414 28 12 30 12 30 2 20 2"/></svg>
+      </a>
+    </li>
+  </template>
+  <template id="tpl-rq-result">
+    <div class="cds--inline-notification cds--inline-notification--low-contrast live-request__note" role="status">
+      <div class="cds--inline-notification__details">
+        <svg class="cds--inline-notification__icon" focusable="false" aria-hidden="true" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M14.9,8h2.2v11h-2.2V8z M16,25c-0.8,0-1.5-0.7-1.5-1.5S15.2,22,16,22c0.8,0,1.5,0.7,1.5,1.5S16.8,25,16,25z"/></svg>
+        <div class="cds--inline-notification__text-wrapper">
+          <div class="cds--inline-notification__title"></div>
+          <div class="cds--inline-notification__subtitle"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <template id="tpl-rq-wait">
+    <div class="live-wait__panel">
+      <div class="live-wait__head">
+        <span class="live-wait__spinner" aria-hidden="true"></span>
+        <h3 class="live-wait__title">正在审核你的申请</h3>
+      </div>
+      <p class="live-wait__text">请求已提交，系统正在审核你的申请，请不要关闭此页面。通过后，下载链接会直接显示在这里。</p>
+      <div class="live-wait__bar" role="progressbar" aria-label="等待审核" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="live-wait__fill"></div></div>
+      <p class="live-wait__left"></p>
+      <p class="live-wait__id">请求编号：<span class="live-mono" data-k="id"></span></p>
+    </div>
+  </template>
+  <template id="tpl-rq-done">
+    <div class="live-wait__panel">
+      <div class="live-wait__body"></div>
+      <button type="button" class="cds--btn cds--btn--tertiary live-wait__again">提交新的请求</button>
+    </div>
+  </template>
+  <template id="tpl-rq-share">
+    <div class="live-share">
+      <dl class="live-share__list">
+        <div><dt>下载链接</dt><dd><a class="cds--link live-share__url" data-k="url" target="_blank" rel="noopener noreferrer"></a></dd></div>
+        <div><dt>提取码</dt><dd class="live-mono live-share__pwd" data-k="pwd"></dd></div>
+        <div><dt>有效期至</dt><dd data-k="expires"></dd></div>
+        <div><dt>访问次数上限</dt><dd data-k="max"></dd></div>
+      </dl>
+      <p class="live-share__label">完整说明（可复制保存）：</p>
+      <pre class="live-share__text" data-k="text"></pre>
+      <div class="live-share__actions">
+        <button type="button" class="cds--btn cds--btn--secondary live-share__copy">复制说明</button>
+        <span class="live-share__copied" role="status"></span>
+      </div>
+    </div>
+  </template>
+  <template id="tpl-notice">
+    <div class="cds--inline-notification cds--inline-notification--low-contrast live-notice" role="status">
+      <div class="cds--inline-notification__details">
+        <svg class="cds--inline-notification__icon" focusable="false" aria-hidden="true" width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M14.9,8h2.2v11h-2.2V8z M16,25c-0.8,0-1.5-0.7-1.5-1.5S15.2,22,16,22c0.8,0,1.5,0.7,1.5,1.5S16.8,25,16,25z"/></svg>
+        <div class="cds--inline-notification__text-wrapper">
+          <div class="cds--inline-notification__title"></div>
+          <div class="cds--inline-notification__subtitle"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="/assets/cookie.js?v=2" defer></script>
+  <script src="/assets/live.js?v=3" defer></script>
+  <script src="/assets/nav.js?v=1" defer></script>
+  <script src="/assets/request.js?v=4" defer></script>
+</body>
+</html>
