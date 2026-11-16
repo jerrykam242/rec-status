@@ -16,7 +16,7 @@ a way for viewers to request recordings, and a sign-in gate in front of everythi
 | **Status site** | A public page showing which rooms are live and being recorded, plus recent events. Visitors can request a recording through a form. Bilingual (zh/en) privacy policy and cookie notice, written for GDPR and PIPL. |
 | **Request flow** | The admin gets an email with signed approve/deny links. The visitor waits on the page for up to 5 minutes. If the request is approved in that time, the page shows the share link the worker created in OpenList. Otherwise the page says the request will be reviewed manually. |
 | **Edge gate** | OpenResty/Lua [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) checks in front of the OpenList sign-in, OpenList share links and the recorder WebUI. It also includes an IBM Carbon sign-in page and theme for the recorder. |
-| **Agent and worker** | Run on the recorder host. The agent pushes recorder state to the status site; the worker handles approved requests (copies files, creates the share, sends mail). |
+| **Agent and worker** | Run on the recorder host. The agent pushes recorder state to the status site; the worker handles approved requests (copies files, creates the share, sends mail). Recordings are archived to whatever storage you mount in OpenList (`ARCHIVE_ROOT`): a cloud drive, S3, WebDAV, a NAS and so on. |
 
 All pages use [IBM Carbon](https://carbondesignsystem.com/) styling and IBM Plex fonts.
 
@@ -65,7 +65,7 @@ Each component has its own notes:
   recorder host: rec-request-worker ◀──/__agent/sync┘
         │  emails admin: [批准 approve] [拒绝 deny]  (signed links, valid 7 days)
         ▼
-  admin approves ──▶ worker copies the day folder to GDrive ──▶ OpenList share (code, expiry, access limit)
+  admin approves ──▶ worker copies the day folder to archive storage ──▶ OpenList share (code, expiry, access limit)
         │
         ▼
   visitor's page (waits up to 5 min) shows the link ── otherwise: "reviewed manually"
