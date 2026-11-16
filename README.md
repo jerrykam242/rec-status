@@ -107,6 +107,10 @@ Each component has its own notes:
 - `carbon.css`: trimmed from `@carbon/styles` (Apache-2.0).
 - The background images and logo are placeholders.
 
+## License
+
+[Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for the bundled third-party material.
+
 ## Acknowledgements
 
 This project is built around [BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder)

@@ -104,6 +104,10 @@ docs/                 仓库标志和 README 截图
 - `carbon.css`：裁剪自 `@carbon/styles`（Apache-2.0）。
 - 背景图和 Logo 均为占位图。
 
+## 许可证
+
+[Apache License 2.0](LICENSE)。项目内附带的第三方资源见 [NOTICE](NOTICE)。
+
 ## 致谢
 
 本项目围绕 [录播姬（BililiveRecorder）](https://github.com/BililiveRecorder/BililiveRecorder) 搭建，

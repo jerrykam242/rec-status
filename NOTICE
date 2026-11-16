@@ -1,0 +1,12 @@
+rec-status
+Copyright 2026 jerrykam242 and rec-status contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes third-party material:
+
+- carbon.css (status-site/index/assets/, edge-gate/public/rec/): trimmed from
+  @carbon/styles by IBM, licensed under the Apache License, Version 2.0.
+- IBM Plex Sans and IBM Plex Mono fonts (assets/fonts/, edge-gate/public/rec/fonts/):
+  Copyright IBM Corp., licensed under the SIL Open Font License 1.1
+  (see IBM-Plex-OFL.txt next to the fonts).
