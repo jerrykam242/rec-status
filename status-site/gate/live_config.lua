@@ -37,7 +37,7 @@ return {
     request_watch = 1200,
 
     -- Static asset version; bump after editing anything in index/assets/.
-    asset_v = "14",
+    asset_v = "15",
 
     -- Privacy policy version the request form's consents refer to (stored with each request).
     policy_version = "2026-11-17",
