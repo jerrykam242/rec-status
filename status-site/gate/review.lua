@@ -25,7 +25,7 @@ local function page(status, title, body_html)
     ngx.print('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>', esc(title),
         ' – 录播状态</title><meta name="viewport" content="width=device-width, initial-scale=1">',
         '<meta name="robots" content="noindex, nofollow">',
-        '<link rel="stylesheet" href="/assets/carbon.css?v=4"><link rel="stylesheet" href="/assets/live.css?v=9">',
+        '<link rel="stylesheet" href="/assets/carbon.css?v=5"><link rel="stylesheet" href="/assets/live.css?v=9">',
         '</head><body><header class="cds--header live-header" data-theme="g100" aria-label="录播状态">',
         '<a class="cds--header__name live-header__name" href="/"><img class="live-header__mark" src="/assets/logo.svg?v=1" width="20" height="20" alt="">录播状态</a></header>',
         '<main class="live-main live-review"><h1 class="live-h2 live-review__title">', esc(title), '</h1>', body_html,
