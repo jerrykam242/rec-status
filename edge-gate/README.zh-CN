@@ -1,0 +1,151 @@
+rec-status · 边缘网关设定集            English: README | 中文
+===========================
+
+队伍里的守门人：为 file.example.com（OpenList）和 rec.example.com（录播姬 WebUI）提供
+Cloudflare Turnstile 校验。不先过巫女的这一关，谁也进不了宝库，也见不到录播姬本人。
+
+Sitekey：YOUR_TURNSTILE_SITEKEY（组件的域名列表必须同时包含这两个主机名）
+
+宿主机路径 /opt/1panel/www/common/turnstile  ==  OpenResty 容器内的 /www/common/turnstile。
+
+
+背包（文件与关键道具）
+----------------------
+  secret          Turnstile secret key（root 600），用 set-secret.sh 写入。
+  cookie_key      会话 / 分享 Cookie 用的随机 HMAC 密钥（root 600）。
+  rec_auth        录播姬 Basic 认证的 "user:pass"（root 600），用 set-rec-auth.sh 写入。
+  rs_key          root 600；与状态站的 ingest_key 相同（见 rs_verify.lua）。
+  turnstile.lua   Siteverify 和 Cookie 工具函数。
+  file_gate.lua   file.example.com：没有有效 X-Turnstile-Token 的 /api/auth/login* 一律拦下。
+                  SSO（2026-11-13；之前微软登录完全绕过了 Turnstile）：
+                  /api/auth/sso?method=sso_get_token 需要 ?ts=<Turnstile token>（openlist.js
+                  会把它加到弹窗 URL 上）且 Sec-Fetch-Site 为 same-origin，然后设置带签名的
+                  10 分钟 Cookie site_sso（Path=/api/auth/，用 cookie_key 计算 MAC）。回调
+                  （/api/auth/sso_callback、/get_sso_id、/sso_get_token）都需要这个 Cookie；
+                  其中的 nonce 只能用一次（共享字典）。method=get_sso_id（在个人资料页绑定账号，
+                  不返回 OpenList token）不受限制。
+                  不支持 sso_compatibility_mode（整页跳转）：它会得到 403 页面，因为
+                  openlist.js 只能给 window.open() 加 token。
+  share_gate.lua  file.example.com 的分享链接（2026-11-16；之前打开不需要任何校验）：
+                  /@s/<id> 页面、JSON 中指向 /@s 路径的 POST /api/fs/*、以及分享下载
+                  （/sd/，以及 /sp/ /sad/ /sap/ /sae/）都需要 site_share Cookie（2 小时，用
+                  cookie_key 计算 HMAC，对所有分享通用）。没有时：/@s/ 页面返回
+                  templates/share_gate.html（Turnstile，action 为 openlist-share，由
+                  public/share.js 自动继续），/sd/ 302 跳转到分享页，API 返回 OpenList 风格的
+                  {"code":403}。校验请求 POST 到 /__turnstile/share（仅限同源；返回路径只能是
+                  /@s/）。由 file_gate.lua 第一时间调用。因此下载必须用通过校验的那个浏览器
+                  （没有该 Cookie 的下载器会被送回分享页）。
+  rs_verify.lua   POST /__turnstile/rs-verify（sites/file.conf 里单独的 location）：给
+                  rec-status.example.com 登录用的 Turnstile 校验，由那台服务器调用。签名：
+                  X-RS-Ts + X-RS-Sig = hex HMAC-SHA1(rs_key, "rs-verify|ts|body")。校验 action 为
+                  rec-status、hostname 为 rec-status.example.com，一次性。修改 rs_key 后要重载（有缓存）。
+  rec_auth.lua    rec.example.com：校验账号密码、会话 Cookie（site_rec）、锁定。
+  rec_gate.lua    rec.example.com：没有有效会话 -> 302 到 /__turnstile/login（非 GET 返回 401 JSON）；
+                  会话有效 -> 向上游添加录播姬的 Basic Authorization。
+                  始终剥掉访客自带的 Authorization 头（2026-11-13：它曾让 /.well-known/* 和
+                  /__turnstile* 变成密码探测器，401 对 404）。
+                  只有 /__turnstile/ 和 /.well-known/acme-challenge/ 跳过会话检查。
+  rec_login.lua   rec.example.com：GET/POST /__turnstile/login，IBM Carbon 登录页。
+                  POST 先校验 Turnstile（action 为 rec-login），再校验用户名和密码。
+  rec_logout.lua  rec.example.com：/__turnstile/logout 清除会话。
+  templates/      rec_login.html（由 rec_login.lua 渲染）、share_gate.html（分享校验页）。
+                  两者都不直接对外提供。
+  public/         openlist.js（OpenList 登录页上的组件；同时显示 Cookie 提示：仅必要 Cookie，
+                  确认状态存在 localStorage "site.cookie-notice"；隐私政策在
+                  https://rec-status.example.com/privacy，源文件 status-site/index/privacy.html）、
+                  share.js + share.css（分享校验页）。
+  public/rec/     登录页资源 + 录播姬皮肤（见下文「衣柜」）。
+  tools/          build-carbon-css.py（不对外提供）、rec-theme-check/（见下文「版本更新日」）。
+  sites/          nginx 片段：file.conf、rec.conf、siteverify.conf。
+
+
+召唤阵（启用方式）
+------------------
+一行文件（1Panel 会 include /www/sites/<site>/proxy/*.conf）：
+  /opt/1panel/www/sites/file.example.com/proxy/turnstile.conf -> include /www/common/turnstile/sites/file.conf;
+  /opt/1panel/www/sites/rec.example.com/proxy/turnstile.conf  -> include /www/common/turnstile/sites/rec.conf;
+
+另外必需：/opt/1panel/www/conf.d/00-turnstile.conf（http 级）
+  lua_shared_dict site_turnstile 2m;   <- 一次性 token 缓存；测试时发现仅靠 Siteverify
+                                          会接受重放的 token。
+
+解除召唤：删掉这两个 proxy/turnstile.conf 文件并重载 OpenResty。
+  （之后 rec.example.com 会退回录播姬自带的 Basic 认证弹窗。）
+
+
+rec.example.com 登录（2026-11-10 起；取代了「仅 Turnstile + 浏览器 Basic 弹窗」的方案）
+--------------------------------------------------------------------------------------
+  - 会话：12 小时的浏览器会话 Cookie，勾选「保持登录」则为 30 天。
+    MAC 包含 rec_auth，所以改了录播姬密码就会把所有人登出。
+  - 同一客户端 IP 输错 10 次密码，锁定登录 15 分钟（lua_shared_dict site_turnstile）。
+    想硬刷这道门？此路不通。
+  - 修改 /opt/1panel/docker/compose/rec 里的 BREC_HTTP_BASIC_PASS 后，运行
+      /opt/1panel/www/common/turnstile/set-rec-auth.sh
+    （从容器环境变量复制密码，用录播姬验证一遍，然后重载）。
+  - 隐藏上游的 WWW-Authenticate，浏览器永远不会弹出 Basic 认证框。
+  - 「退出登录」（public/rec/shell.js）通过 sites/rec.conf 里对 '</html>' 的 sub_filter
+    加到录播姬的每个 HTML 页面（已换皮肤的页面放在页头，其他页面为悬浮按钮）。
+    theme.css + shell.js 还会在 /、/ui/、/file/、/player/ 的 <meta charset> 之后注入
+    （$rec_theme）。/file/ 列表没有 Content-Type，所以 rec.conf 用 header_filter_by_lua_block
+    把它标成 text/html 以便 sub_filter 生效。rec_gate.lua 对 HTML 请求去掉 Accept-Encoding，
+    让 sub_filter 看到的是未压缩的 HTML；WebUI 那个奇怪的 "text/html; encoding=utf-8" 类型
+    已加入 sub_filter_types。修改后记得把 ?v= 加一。
+
+
+衣柜（public/rec/）
+-------------------
+  carbon.css      Carbon 编译后的 @carbon/styles 1.119.0（Apache-2.0），裁剪到本页面 + 主题 token；
+                  用 tools/build-carbon-css.py 从 "Carbon" 设计系统 artifact 重新生成。
+  rec.css         手机 / 平板：居中卡片、16px 文字、56px 输入框。桌面 >= 66rem：背景图 bg.jpg
+                  （占位图；署名标签 .rec-credit）按屏幕高度 110% 显示，下面垫一层它自己的模糊副本；
+                  登录框是右侧悬浮的 26rem 毛玻璃卡片，48px 输入框，页脚在卡片内。
+  login.js        显示 / 隐藏密码、焦点处理。   signout.js（已不再引用）。
+  logo.svg、fonts/  IBM Plex Sans 300/400/600 + Plex Mono 400（输入框），latin 子集，OFL。
+  修改这里的任何文件后，把 rec_login.lua 里的 ASSET_V 加一。
+
+  theme.css + shell.js（2026-11-13）：给录播姬自己的页面 /、/ui/（WebUI，Naive UI）、/file/
+  和 /player/ 换上整套 IBM Carbon 服装。录播姬内部一个字节都没改：这是换装，不是魔改。
+    - theme.css 把 Naive UI 的 --n-* 变量指向 Carbon token（White / Gray 100），并重新设计
+      静态页面的样式。
+    - shell.js 在首次绘制前设置 data-rec-page / data-rec-theme，给静态页面加上 Gray 100 的
+      Carbon 页头（导航、亮 / 暗切换、退出登录），并把「退出登录」放进 WebUI 的页头。
+      亮 / 暗模式跟随 WebUI 自己的开关（localStorage "brec.theme"，默认暗色）；静态页面的
+      开关写的也是同一个 key。
+    - 录播姬的其他页面（Swagger、GraphiQL……）只有悬浮的「退出登录」按钮。
+    - 修改这两个文件后，把 sites/rec.conf 里的 ?v= 加一。
+    - Naive UI 只在主题 class 的哈希里标记 quaternary/tertiary 按钮
+      （例如 "__button-dark-dhlmmd"），所以 theme.css 用 [class*="hl"] 之类的选择器匹配；
+      WebUI 升级后可能失效。改动前的备份：turnstile-backup-20261113-theme。
+
+
+版本更新日（tools/rec-theme-check/，2026-11-14 加入）
+----------------------------------------------------
+  皮肤存在这里而不是容器里，所以拉取新的 bililive/recorder 镜像不会丢失它。
+  可能出问题的是「合身度」：theme.css 依赖 WebUI 的 Naive UI 结构。
+  rec-theme-check.timer 每小时运行一次；当 rec-recorder-1 换了新镜像时，它会用无头浏览器
+  在新 WebUI 上测试皮肤（check.py，镜像 rec-theme-check:local 由该目录下的 Dockerfile 构建）。
+  如果不再合身，就创建 /www/common/turnstile/rec-theme.off，nginx（rec.conf）改为提供
+  录播姬的原始外观，「退出登录」照常可用。之后某次检查通过时会删除这个文件。
+    rec-theme-check.sh --status | --force      journalctl -u rec-theme-check
+
+
+结界（源站锁定，2026-11-13）
+----------------------------
+  80/443 端口只接受 Cloudflare、回环地址和 Docker 网桥（nftables 表 inet cf_origin，
+  /usr/local/sbin/cf-origin-firewall.sh，systemd cf-origin-firewall.service + 每周的
+  -refresh.timer）。因此 CF-Connecting-IP 可信，也没人能直连 203.0.113.10 绕过 Cloudflare Access。
+  撤销：cf-origin-firewall.sh off。
+
+
+已知 Bug 与备注
+---------------
+  - openlist.js 以 /__turnstile/openlist.js?v=N 注入。Cloudflare 和浏览器会缓存 .js 4 小时，
+    所以修改脚本后要把 sites/file.conf 里的 v= 加一。
+  - OpenList 登录页会把【任何】带 `token` 字段的 window postMessage 当作 SSO 登录（不检查来源）。
+    Turnstile 的 iframe 恰好会发这种消息，所以 openlist.js 对除 Turnstile 外的所有监听器隐藏来自
+    https://challenges.cloudflare.com 的消息。否则登录页会在 / -> /@login 之间死循环，
+    提示 "Token is invalidated"。
+  - WebDAV（/dav）和通行密钥登录不经过 Turnstile（通行密钥登录已禁用）。
+  - 修改 secret 或 cookie_key 后：重载 OpenResty
+      sudo docker exec 1Panel-openresty-XXXX openresty -s reload
+  - 拦截记录在各站点的 log/error.log 里（级别 error，关键字 "turnstile:"）。

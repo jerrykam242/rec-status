@@ -1,38 +1,96 @@
-Live recorder status page (hand-made, 2026-11-13). Host: rec-status.example.com (folder name stays "live"), through Aliyun ESA.
+rec-status · status site lore book            English | 中文: README.zh-CN
+===================================
+
+The Bard of the party: a hand-made live status page for 录播姬 (BililiveRecorder), 2026-11-13.
+Host: rec-status.example.com (the folder name stays "live"), served through Aliyun ESA.
 
 Host path /opt/1panel/www/sites/live  ==  /www/sites/live in the OpenResty container.
 
-  index/            static root. index.html = the status page (served only with a session),
+
+Map of the dungeon
+------------------
+  index/            static root.
+                    index.html = the status page + request form (served only with a session).
+                    privacy.html = public privacy policy (/privacy), no captcha.
                     assets/ = Carbon CSS (carbon.css, trimmed from the "Carbon" design-system
                     artifact with tools/build-carbon-css.py), gate.css (sign-in, same look as
-                    rec.example.com), live.css/live.js (status page), gate.js (ESA captcha),
-                    theme.js, IBM Plex fonts (OFL), logo.svg, bg.jpg (placeholder background).
+                    rec.example.com), live.css/live.js (status page), request.js (request form),
+                    gate.js (sign-in), cookie.css/cookie.js (cookie notice), nav.js, theme.js,
+                    IBM Plex fonts (OFL), logo.svg, bg.jpg / bg-mobile.webp (placeholder art).
   gate/             Lua + template, not web-served:
-    live_config.lua   ESA captcha 身份标 (captcha_prefix) and 场景ID (captcha_scene), session TTL, asset_v.
-    gate.lua          rewrite phase, every request: ESA edge header; "/" only in exchange for a
-                      one-time live_entry pass (captcha on every visit); /api/* needs live_sess
-                      (browser-session, renewed by each poll, 10 min idle); /__gate/*, /assets/*,
-                      /__ingest open.
-    login.lua/.html   GET /__gate/login (Carbon sign-in with the ESA AI captcha).
-    verify.lua        POST /__gate/verify. ESA verifies the captcha on this URI before forwarding
-                      (ESA rule "需验签的接口" = rec-status.example.com/__gate/verify, POST, with
-                      拦截空 Token ON: without it ESA checks nothing); we then set the signed
-                      live_entry pass (60 s, single use). captcha_trust_esa in live_config.lua.
+    live_config.lua   public settings: session TTLs, request limits, asset_v, policy_version,
+                      legacy ESA captcha values (captcha_prefix, captcha_scene).
+    load.lua / common.lua   shared helpers (signed tokens, edge check, key files, JSON).
+    gate.lua          rewrite phase, every request (see "The gate" below).
+    login.lua/.html   GET /__gate/login: Carbon sign-in page with the Turnstile widget.
+    ts_verify.lua     POST /__gate/check (since 2026-11-16): Turnstile sign-in. The Turnstile
+                      secret lives on the recorder host, so the token is sent via the internal
+                      location /__ts_check to https://file.example.com/__turnstile/rs-verify,
+                      signed with ingest_key (HMAC-SHA1 over "rs-verify|ts|body"). On success
+                      it sets the one-time live_entry pass.
+    verify.lua        POST /__gate/verify: the old ESA AI captcha path (ESA rule "需验签的接口",
+                      POST, with 拦截空 Token ON; without it ESA checks nothing). Kept as a
+                      fallback; see captcha_trust_esa in live_config.lua.
     logout.lua        /__gate/logout.
-    ingest.lua        POST /__ingest from the agent on the recorder host (HMAC-SHA1 with
-                      ingest_key over "ts.body", +-300 s, never older than the last one).
+    ingest.lua        POST /__ingest from rec-status-agent (HMAC-SHA1 with ingest_key over
+                      "ts.body", +-300 s, never older than the last one).
     status.lua        GET /api/status -> {serverTime, receivedAt, data}.
-    cookie_key        root 600, random; rotate to end all open sessions.
-    ingest_key        root 600; same value as PUSH_KEY in /etc/rec-status/agent.env on the
-                      recorder host (203.0.113.10).
-    edge_key          root 600; ESA must add request header "X-Live-Edge: <edge_key>" to
-                      origin requests (ESA rule). Without this file the edge check is off.
+    archive.lua       GET /api/archive: rooms and dates that have recordings (for the form).
+    request.lua       POST /api/request: a visitor files a recording request (quest).
+    request_status.lua  GET /api/request/status?id=&t=: the visitor's page polls its quest.
+    agent.lua         POST /__agent/sync: rec-request-worker (signed like /__ingest).
+    review.lua        /__admin/review: signed approve/deny links from the admin email.
+    store.lua / store_load.lua   requests.json + archive.json in data_dir (atomic, locked).
+    cookie_key        root 600, random. Rotate it to end every open session.
+    ingest_key        root 600. Same value as PUSH_KEY in /etc/rec-status/agent.env and
+                      request-worker.env on the recorder host (203.0.113.10), and as rs_key
+                      in the edge gate.
+    admin_key         root 600, random. Signs the review links. Rotate it to void every
+                      link already mailed.
+    edge_key          root 600. ESA must add the request header "X-Live-Edge: <edge_key>" to
+                      origin requests (ESA rule). Without this file the edge check is off
+                      (a warning is logged).
   proxy/live.conf   locations + rewrite_by_lua (included by the server block).
+  data/             requests.json, archive.json (root-only, not web-served, not in git).
   log/              access.log, error.log.
 /opt/1panel/www/conf.d/rec-status.example.com.conf   server block (uses the *.example.com cert of site e5).
-/opt/1panel/www/conf.d/00-live.conf          lua_shared_dict live_status (latest snapshot, in memory;
-                                             the agent re-sends at least every 60 s).
+/opt/1panel/www/conf.d/00-live.conf   lua_shared_dict live_status (latest snapshot, counters and
+                                      nonces, in memory; the agent re-sends at least every 60 s).
 
-Reload: docker exec 1Panel-openresty-XXXX openresty -t && docker exec 1Panel-openresty-XXXX openresty -s reload
-Bump asset_v in live_config.lua and ?v= in index/index.html after editing assets.
+
+The gate (gate.lua)
+-------------------
+  1. Only requests forwarded by ESA are served (edge header, when edge_key exists).
+  2. Open without a session: /__gate/*, /assets/*, /privacy, /favicon.ico, /robots.txt,
+     /__ingest and /__agent/sync (HMAC-signed by the familiars), /__admin/review (HMAC-signed
+     links), and /api/request/status (needs the request's ticket).
+  3. Passing Turnstile gives a one-time entry pass (entry_ttl, 60 s); "/" burns it and sets the
+     session cookie, valid for a FIXED sess_ttl (600 s) counted from the captcha.
+     Reloads, new tabs and /api/* polls inside that window need no captcha; nothing extends it.
+     When the timer runs out: back to the title screen (/__gate/login).
+
+
+Recording requests (the quest board)
+------------------------------------
+  - The form lists rooms/dates from /api/archive (pushed by the worker every ARCHIVE_EVERY s).
+  - Limits (live_config.lua): request_per_session = 3 per sign-in, request_per_hour = 20 for
+    the whole site, request_max_open = 30 awaiting review. Requests are deleted
+    request_keep_days (30) after their last change.
+  - Life of a quest:
+      new -> notified (worker mailed the admin) -> approved -> processing -> shared
+                                                -> denied                 -> failed
+  - Review links are HMAC(admin_key, "review|id|action|exp"), valid review_days (7). Opening a
+    link only shows the request and a confirm button; the decision needs a same-origin POST,
+    so mail scanners can't approve anything by "clicking" it.
+  - The visitor's page waits request_wait (300 s). Decided in time -> it shows waiting /
+    preparing / ready (link + code) / denied. Otherwise -> "manual". It keeps checking for a
+    link for up to request_watch (1200 s).
+  - Each request stores the privacy policy_version the visitor consented to.
+
+
+Save points & spells
+--------------------
+Reload:   docker exec 1Panel-openresty-XXXX openresty -t && docker exec 1Panel-openresty-XXXX openresty -s reload
+Assets:   bump asset_v in live_config.lua and ?v= in index/index.html after editing anything in assets/.
+Policy:   bump policy_version after changing privacy.html.
 Source of truth: this repository (status-site/).
